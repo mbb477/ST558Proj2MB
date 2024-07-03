@@ -1,0 +1,163 @@
+[
+  {
+    "objectID": "Project2quarto.html",
+    "href": "Project2quarto.html",
+    "title": "project 2",
+    "section": "",
+    "text": "library(tidyverse)\n\n── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──\n✔ dplyr     1.1.4     ✔ readr     2.1.5\n✔ forcats   1.0.0     ✔ stringr   1.5.1\n✔ ggplot2   3.5.1     ✔ tibble    3.2.1\n✔ lubridate 1.9.3     ✔ tidyr     1.3.1\n✔ purrr     1.0.2     \n── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──\n✖ dplyr::filter() masks stats::filter()\n✖ dplyr::lag()    masks stats::lag()\nℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors\n\nlibrary(jsonlite)\n\n\nAttaching package: 'jsonlite'\n\nThe following object is masked from 'package:purrr':\n\n    flatten\n\nlibrary(dplyr)\nlibrary(httr)"
+  },
+  {
+    "objectID": "Project2quarto.html#check-for-missing-values",
+    "href": "Project2quarto.html#check-for-missing-values",
+    "title": "project 2",
+    "section": "check for missing values",
+    "text": "check for missing values\n\n#na_counts &lt;- cancer_data1 |&gt;\n#  summarize(across(everything(), function(x) sum(is.na(x))))\n#na_counts\n# Assuming cancer_data1 is your tibble\n#unique_values &lt;- unique(cancer_data1$Her2_Receptor_Status)\n#unique_values &lt;- unique(cancer_data1$Stage)\n#unique_values\ncolSums(is.na(cancer_data1))\n\n                  Patient_Id                Diagnosis_Age \n                           0                            0 \n    Estrogen_Receptor_Status                       Cohort \n                          49                            0 \n                      Gender Progesterone_Receptor_Status \n                           0                           50 \n           Histological_Type         Her2_Receptor_Status \n                           1                          178 \n                Pathologic_M                 Pathologic_N \n                           0                            0 \n                Pathologic_T                        Stage \n                           0                            8 \n                        Race            Radiation_Therapy \n                          95                           95 \n  Targeted_Molecular_Therapy              Stage_Condensed \n                         520                            8 \n                Age_Grouping \n                           0 \n\n#rowSums(is.na(cancer_data1))"
+  },
+  {
+    "objectID": "Project2quarto.html#convert-categorical-to-factor",
+    "href": "Project2quarto.html#convert-categorical-to-factor",
+    "title": "project 2",
+    "section": "convert categorical to factor",
+    "text": "convert categorical to factor\n\ncancer_data1 &lt;- cancer_data1 |&gt;\n  mutate(Gender =  \n           factor(Gender, levels = c(\"female\", \"male\"), labels = c(\"Female\", \"Male\")), \n         Estrogen_Receptor_Status = \n           factor(Estrogen_Receptor_Status, levels = c(\"positive\", \"negative\", \n                                                       \"indeterminate\"),\n                  labels = c(\"Positive\", \"Negative\", \"Indeterminate\")),\n         Progesterone_Receptor_Status = \n           factor(Progesterone_Receptor_Status, levels = c(\"positive\", \"negative\", \n                                                           \"indeterminate\"),\n                  labels = c(\"Positive\", \"Negative\", \"Indeterminate\")),\n         Her2_Receptor_Status = \n           factor(Her2_Receptor_Status, levels = c(\"positive\", \"negative\", \n                                                    \"equivocal\", \"indeterminate\"),\n                  labels = c(\"Positive\", \"Negative\", \"Equivocal\", \"Indeterminate\")),\n         Targeted_Molecular_Therapy = \n           factor(Targeted_Molecular_Therapy, levels = c(\"yes\", \"no\", NA),\n                                            labels = c(\"Yes\", \"No\", \"NA\"), exclude = NULL),\n         Radiation_Therapy = \n           factor(Radiation_Therapy, levels = c(\"yes\", \"no\", NA),\n                                            labels = c(\"Yes\", \"No\", \"NA\"), exclude = NULL), \n         Age_Grouping = factor(Age_Grouping, levels = c(\"Young\", \"Middle Age\",\n                                                        \"Old\")),\n         Race = factor(Race, levels = c(\"american indian or alaska native\",\n                                        \"asian\", \"black or african american\",\n                                        \"white\"),\n                       labels = c(\"American Indian or Alaska Native\",\n                                        \"Asian\", \"Black or African American\",\n                                        \"White\"))\n         ) \ncancer_data1\n\n# A tibble: 1,097 × 17\n   Patient_Id Diagnosis_Age Estrogen_Receptor_Status Cohort Gender\n   &lt;chr&gt;      &lt;chr&gt;         &lt;fct&gt;                    &lt;chr&gt;  &lt;fct&gt; \n 1 a2jt       63            &lt;NA&gt;                     BRCA   Female\n 2 a0w4       46            Positive                 BRCA   Female\n 3 a0b5       40            Positive                 BRCA   Female\n 4 a3tn       75            Positive                 BRCA   Female\n 5 a0b3       53            Negative                 BRCA   Female\n 6 a0cd       66            Positive                 BRCA   Female\n 7 a0g0       56            Negative                 BRCA   Female\n 8 a10e       64            Positive                 BRCA   Female\n 9 a66k       72            Positive                 BRCA   Female\n10 a14n       37            Negative                 BRCA   Female\n# ℹ 1,087 more rows\n# ℹ 12 more variables: Progesterone_Receptor_Status &lt;fct&gt;,\n#   Histological_Type &lt;chr&gt;, Her2_Receptor_Status &lt;fct&gt;, Pathologic_M &lt;chr&gt;,\n#   Pathologic_N &lt;chr&gt;, Pathologic_T &lt;chr&gt;, Stage &lt;chr&gt;, Race &lt;fct&gt;,\n#   Radiation_Therapy &lt;fct&gt;, Targeted_Molecular_Therapy &lt;fct&gt;,\n#   Stage_Condensed &lt;chr&gt;, Age_Grouping &lt;fct&gt;\n\n#colSums(is.na(cancer_data1))"
+  },
+  {
+    "objectID": "Project2quarto.html#gender",
+    "href": "Project2quarto.html#gender",
+    "title": "project 2",
+    "section": "Gender",
+    "text": "Gender\n\ncancer_data1 |&gt;\n  group_by(Gender) |&gt;\n  summarize(count = n())\n\n# A tibble: 2 × 2\n  Gender count\n  &lt;fct&gt;  &lt;int&gt;\n1 Female  1085\n2 Male      12"
+  },
+  {
+    "objectID": "Project2quarto.html#race",
+    "href": "Project2quarto.html#race",
+    "title": "project 2",
+    "section": "Race",
+    "text": "Race\n\ncancer_data1 |&gt;\n  drop_na(Race) |&gt;\n  group_by(Race) |&gt;\n  summarize(count = n())\n\n# A tibble: 4 × 2\n  Race                             count\n  &lt;fct&gt;                            &lt;int&gt;\n1 American Indian or Alaska Native     1\n2 Asian                               61\n3 Black or African American          183\n4 White                              757\n\n\n#Stage\n\ncancer_data1 |&gt;\n  drop_na(Stage) |&gt;\n  group_by(Stage) |&gt;\n  summarize(count = n())\n\n# A tibble: 12 × 2\n   Stage      count\n   &lt;chr&gt;      &lt;int&gt;\n 1 stage i       90\n 2 stage ia      86\n 3 stage ib       7\n 4 stage ii       6\n 5 stage iia    358\n 6 stage iib    258\n 7 stage iii      2\n 8 stage iiia   156\n 9 stage iiib    27\n10 stage iiic    65\n11 stage iv      20\n12 stage x       14"
+  },
+  {
+    "objectID": "Project2quarto.html#receptor-status",
+    "href": "Project2quarto.html#receptor-status",
+    "title": "project 2",
+    "section": "Receptor status",
+    "text": "Receptor status\n\ncancer_data1 |&gt;\n  select(Estrogen_Receptor_Status, Progesterone_Receptor_Status, \n         Her2_Receptor_Status) |&gt;\n  pivot_longer(cols = everything(), \n               names_to = \"Receptor\", values_to = \"Status\") |&gt;\n  drop_na(Status) |&gt;\n  group_by(Status, Receptor) |&gt;\n  summarize(count = n()) |&gt;\n  pivot_wider(names_from = Status, values_from = count, values_fill = 0)\n\n`summarise()` has grouped output by 'Status'. You can override using the\n`.groups` argument.\n\n\n# A tibble: 3 × 5\n  Receptor                     Positive Negative Indeterminate Equivocal\n  &lt;chr&gt;                           &lt;int&gt;    &lt;int&gt;         &lt;int&gt;     &lt;int&gt;\n1 Estrogen_Receptor_Status          808      238             2         0\n2 Her2_Receptor_Status              164      564            12       179\n3 Progesterone_Receptor_Status      699      344             4         0"
+  },
+  {
+    "objectID": "Project2quarto.html#treatment",
+    "href": "Project2quarto.html#treatment",
+    "title": "project 2",
+    "section": "treatment",
+    "text": "treatment\n\ncancer_data1_long1 &lt;- cancer_data1 |&gt;\n  select(Radiation_Therapy, Targeted_Molecular_Therapy) |&gt;\n  pivot_longer(cols = everything(), \n               names_to = \"Therapy\", values_to = \"Received\")\ncancer_data1_long1\n\n# A tibble: 2,194 × 2\n   Therapy                    Received\n   &lt;chr&gt;                      &lt;fct&gt;   \n 1 Radiation_Therapy          Yes     \n 2 Targeted_Molecular_Therapy Yes     \n 3 Radiation_Therapy          No      \n 4 Targeted_Molecular_Therapy No      \n 5 Radiation_Therapy          Yes     \n 6 Targeted_Molecular_Therapy NA      \n 7 Radiation_Therapy          Yes     \n 8 Targeted_Molecular_Therapy NA      \n 9 Radiation_Therapy          Yes     \n10 Targeted_Molecular_Therapy Yes     \n# ℹ 2,184 more rows\n\ng &lt;- ggplot(cancer_data1_long1, aes(x = Therapy, fill = Received))\ng + geom_bar() +\n  labs(x = \"Treatment Therapy\", y = \"Count\", \n       title = \"Stacked Bar Chart of Administered Treatments for Breast Cancer\") +\n  scale_x_discrete(labels = c(\"Radiation_Therapy\" = \"Radiation Therapy\", \n  \"Targeted_Molecular_Therapy\" = \"Targeted Molecular Therapy\")) +\n  labs(fill = \"Treatment Received\")"
+  },
+  {
+    "objectID": "Project2quarto.html#receptor-status-1",
+    "href": "Project2quarto.html#receptor-status-1",
+    "title": "project 2",
+    "section": "Receptor Status",
+    "text": "Receptor Status\n\ncancer_data1_long2 &lt;- cancer_data1 |&gt;\n  select(Estrogen_Receptor_Status, Progesterone_Receptor_Status, Her2_Receptor_Status) |&gt;\n  pivot_longer(cols = everything(), \n               names_to = \"Receptor\", values_to = \"Status\") |&gt;\n  drop_na(Status)\ncancer_data1_long2\n\n# A tibble: 3,014 × 2\n   Receptor                     Status  \n   &lt;chr&gt;                        &lt;fct&gt;   \n 1 Estrogen_Receptor_Status     Positive\n 2 Progesterone_Receptor_Status Positive\n 3 Her2_Receptor_Status         Negative\n 4 Estrogen_Receptor_Status     Positive\n 5 Progesterone_Receptor_Status Positive\n 6 Her2_Receptor_Status         Negative\n 7 Estrogen_Receptor_Status     Positive\n 8 Progesterone_Receptor_Status Positive\n 9 Her2_Receptor_Status         Positive\n10 Estrogen_Receptor_Status     Negative\n# ℹ 3,004 more rows\n\ng &lt;- ggplot(cancer_data1_long2, aes(x = Receptor, fill = Status))\ng + geom_bar() +\n  labs(x = \"Receptor\", y = \"Count\", title = \"Stacked Bar Chart of Receptor Status\") +\n  scale_x_discrete(labels = c(\"Estrogen_Receptor_Status\" = \"Estrogen Receptor\", \n  \"Progesterone_Receptor_Status\" = \"Progesterone Receptor\", \n  \"Her2_Receptor_Status\" = \"Her2 Receptor\")) +\n  scale_fill_manual(values = c(\"Positive\" = \"pink\",\n                               \"Negative\" = \"skyblue\",\n                               \"Indeterminate\" = \"purple\",\n                               \"Equivocal\" = \"cornflowerblue\"\n                               ))"
+  },
+  {
+    "objectID": "Project2quarto.html#positive-receptor-status-by-age",
+    "href": "Project2quarto.html#positive-receptor-status-by-age",
+    "title": "project 2",
+    "section": "Positive Receptor Status by Age",
+    "text": "Positive Receptor Status by Age\n\ncancer_data1_long3 &lt;- cancer_data1 |&gt;\n  select(Estrogen_Receptor_Status, Progesterone_Receptor_Status, \n                Her2_Receptor_Status, Age_Grouping)|&gt;\n  pivot_longer(cols = \n                 c(Estrogen_Receptor_Status, Progesterone_Receptor_Status, Her2_Receptor_Status),\n               names_to = \"Receptor_Type\", values_to = \"Receptor_Status\") |&gt;\n  filter(Receptor_Status == \"Positive\") |&gt;\n  group_by(Age_Grouping) |&gt;\n  mutate(total_count = n()) |&gt;\n  group_by(Age_Grouping, Receptor_Type) |&gt;\n  summarize(count = n(), total_count = dplyr::first(total_count), .groups = \"drop\") |&gt;\n  mutate(Proportion = count /total_count)\n\ncancer_data1_long3\n\n# A tibble: 9 × 5\n  Age_Grouping Receptor_Type                count total_count Proportion\n  &lt;fct&gt;        &lt;chr&gt;                        &lt;int&gt;       &lt;int&gt;      &lt;dbl&gt;\n1 Young        Estrogen_Receptor_Status        51         106     0.481 \n2 Young        Her2_Receptor_Status            10         106     0.0943\n3 Young        Progesterone_Receptor_Status    45         106     0.425 \n4 Middle Age   Estrogen_Receptor_Status       481         995     0.483 \n5 Middle Age   Her2_Receptor_Status            95         995     0.0955\n6 Middle Age   Progesterone_Receptor_Status   419         995     0.421 \n7 Old          Estrogen_Receptor_Status       276         570     0.484 \n8 Old          Her2_Receptor_Status            59         570     0.104 \n9 Old          Progesterone_Receptor_Status   235         570     0.412 \n\ng &lt;- ggplot(cancer_data1_long3, aes(x = Age_Grouping, y = Proportion, fill = Receptor_Type))\ng + geom_bar(stat = \"identity\") +\n  labs(x = \"Age Group\", y = \"Proportion\",\n       title = \"Stacked Bar Chart of Positive Receptor Status by Age\") + \n  scale_fill_manual(values = c(\"Estrogen_Receptor_Status\" = \"pink\",\n                               \"Progesterone_Receptor_Status\" = \"skyblue\",\n                               \"Her2_Receptor_Status\" = \"cornflowerblue\"\n                               ),\n                    labels = c(\"Estrogen_Receptor_Status\" = \"Estrogen Positive\" ,\n                               \"Progesterone_Receptor_Status\" = \"Progesterone Positive\",\n                               \"Her2_Receptor_Status\" = \"Her2 Positive\")) +\n  labs(fill = \"Receptor\")"
+  },
+  {
+    "objectID": "Project2quarto.html#test",
+    "href": "Project2quarto.html#test",
+    "title": "project 2",
+    "section": "test",
+    "text": "test"
+  },
+  {
+    "objectID": "Project2quarto.html#faceted-plot-of-positive-receptor-status-by-age",
+    "href": "Project2quarto.html#faceted-plot-of-positive-receptor-status-by-age",
+    "title": "project 2",
+    "section": "faceted plot of Positive Receptor Status by Age",
+    "text": "faceted plot of Positive Receptor Status by Age\n\ng &lt;- ggplot(cancer_data1_long3, aes(x = Age_Grouping, y = Proportion, fill = Receptor_Type))\ng + geom_bar(stat = \"identity\", position = \"dodge\") +\n  labs(x = \"Age Group\", y = \"Proportion\",\n       title = \"Stacked Bar Chart of Positive Receptor Status by Age\") + \n  scale_fill_manual(values = c(\"Estrogen_Receptor_Status\" = \"pink\",\n                               \"Progesterone_Receptor_Status\" = \"skyblue\",\n                               \"Her2_Receptor_Status\" = \"cornflowerblue\"\n                               ),\n                    labels = c(\"Estrogen_Receptor_Status\" = \"Estrogen Positive\" ,\n                               \"Progesterone_Receptor_Status\" = \"Progesterone Positive\",\n                               \"Her2_Receptor_Status\" = \"Her2 Positive\")) +\n  labs(fill = \"Receptor Status\")"
+  },
+  {
+    "objectID": "Project2quarto.html#check-for-missing-values-1",
+    "href": "Project2quarto.html#check-for-missing-values-1",
+    "title": "project 2",
+    "section": "check for missing values",
+    "text": "check for missing values\n\ncolSums(is.na(cancer_data3))\n\n                  Patient_Id                Diagnosis_Age \n                           0                            0 \n                      Cohort                       Gender \n                           0                            0 \n     Primary_Therapy_Outcome Additional_Treatment_Outcome \n                          57                          113 \n           Diagnosis_Subtype            Histological_Type \n                           5                            3 \n     Lymphovascular_Invasion                 Pathologic_M \n                         127                            3 \n                Pathologic_N                 Pathologic_T \n                           6                           32 \n                       Stage                         Race \n                           2                           18 \n                Age_Grouping \n                           0"
+  },
+  {
+    "objectID": "Project2quarto.html#check-missing-values-again",
+    "href": "Project2quarto.html#check-missing-values-again",
+    "title": "project 2",
+    "section": "check missing values again",
+    "text": "check missing values again\n\ncolSums(is.na(cancer_data3))\n\n                  Patient_Id                Diagnosis_Age \n                           0                            0 \n                      Cohort                       Gender \n                           0                            0 \n     Primary_Therapy_Outcome Additional_Treatment_Outcome \n                           0                            0 \n           Diagnosis_Subtype            Histological_Type \n                           5                            3 \n     Lymphovascular_Invasion                 Pathologic_M \n                         127                            3 \n                Pathologic_N                 Pathologic_T \n                           6                           32 \n                       Stage                         Race \n                           2                           18 \n                Age_Grouping \n                           0"
+  },
+  {
+    "objectID": "Project2quarto.html#gender-1",
+    "href": "Project2quarto.html#gender-1",
+    "title": "project 2",
+    "section": "Gender",
+    "text": "Gender\n\ncancer_data3 |&gt;\n  group_by(Gender) |&gt;\n  summarize(count = n())\n\n# A tibble: 2 × 2\n  Gender count\n  &lt;fct&gt;  &lt;int&gt;\n1 Female   108\n2 Male     304"
+  },
+  {
+    "objectID": "Project2quarto.html#race-1",
+    "href": "Project2quarto.html#race-1",
+    "title": "project 2",
+    "section": "Race",
+    "text": "Race\n\ncancer_data3 |&gt;\n  drop_na(Race) |&gt;\n  group_by(Race) |&gt;\n  summarize(count = n())\n\n# A tibble: 3 × 2\n  Race                      count\n  &lt;fct&gt;                     &lt;int&gt;\n1 Asian                        44\n2 Black or African American    23\n3 White                       327\n\n\n#Stage\n\ncancer_data3 |&gt;\n  drop_na(Stage) |&gt;\n  group_by(Stage) |&gt;\n  summarize(count = n())\n\n# A tibble: 4 × 2\n  Stage     count\n  &lt;chr&gt;     &lt;int&gt;\n1 stage i       2\n2 stage ii    131\n3 stage iii   141\n4 stage iv    136"
+  },
+  {
+    "objectID": "Project2quarto.html#check-for-missing-values-2",
+    "href": "Project2quarto.html#check-for-missing-values-2",
+    "title": "project 2",
+    "section": "check for missing values",
+    "text": "check for missing values\n\ncolSums(is.na(cancer_data5))\n\n                Patient_Id              Diagnosis_Age \n                         0                         19 \n                 PatientId                     Cohort \n                         0                          0 \n                    Gender          Histological_Type \n                         0                          0 \n   Primary_Therapy_Outcome               Pathologic_M \n                        90                          4 \n              Pathologic_N               Pathologic_T \n                         1                          0 \n                     Stage                       Race \n                         8                         67 \n         Radiation_Therapy Targeted_Molecular_Therapy \n                        47                         49"
+  },
+  {
+    "objectID": "Project2quarto.html#check-missing-values-again-1",
+    "href": "Project2quarto.html#check-missing-values-again-1",
+    "title": "project 2",
+    "section": "check missing values again",
+    "text": "check missing values again\n\ncolSums(is.na(cancer_data5))\n\n                Patient_Id              Diagnosis_Age \n                         0                         19 \n                 PatientId                     Cohort \n                         0                          0 \n                    Gender          Histological_Type \n                         0                          0 \n   Primary_Therapy_Outcome               Pathologic_M \n                        90                          4 \n              Pathologic_N               Pathologic_T \n                         1                          0 \n                     Stage                       Race \n                         8                         67 \n         Radiation_Therapy Targeted_Molecular_Therapy \n                        47                         49"
+  },
+  {
+    "objectID": "Project2quarto.html#gender-2",
+    "href": "Project2quarto.html#gender-2",
+    "title": "project 2",
+    "section": "Gender",
+    "text": "Gender\n\ncancer_data5 |&gt;\n  group_by(Gender) |&gt;\n  summarize(count = n())\n\n# A tibble: 2 × 2\n  Gender count\n  &lt;fct&gt;  &lt;int&gt;\n1 Female   280\n2 Male     242"
+  },
+  {
+    "objectID": "Project2quarto.html#race-2",
+    "href": "Project2quarto.html#race-2",
+    "title": "project 2",
+    "section": "Race",
+    "text": "Race\n\ncancer_data5 |&gt;\n  drop_na(Race) |&gt;\n  group_by(Race) |&gt;\n  summarize(count = n())\n\n# A tibble: 4 × 2\n  Race                             count\n  &lt;fct&gt;                            &lt;int&gt;\n1 American Indian or Alaska Native     1\n2 Asian                                8\n3 Black or African American           53\n4 White                              393"
+  },
+  {
+    "objectID": "Project2quarto.html#stage",
+    "href": "Project2quarto.html#stage",
+    "title": "project 2",
+    "section": "Stage",
+    "text": "Stage\n\ncancer_data5 |&gt;\n  drop_na(Stage) |&gt;\n  group_by(Stage) |&gt;\n  summarize(count = n())\n\n# A tibble: 9 × 2\n  Stage      count\n  &lt;chr&gt;      &lt;int&gt;\n1 stage i        5\n2 stage ia     134\n3 stage ib     140\n4 stage ii       1\n5 stage iia     50\n6 stage iib     73\n7 stage iiia    74\n8 stage iiib    11\n9 stage iv      26"
+  },
+  {
+    "objectID": "Project2quarto.html#treatment-1",
+    "href": "Project2quarto.html#treatment-1",
+    "title": "project 2",
+    "section": "treatment",
+    "text": "treatment\n\ncancer_data5_long5 &lt;- cancer_data5 |&gt;\n  select(Radiation_Therapy, Targeted_Molecular_Therapy) |&gt;\n  pivot_longer(cols = everything(), \n               names_to = \"Therapy\", values_to = \"Received\")\ncancer_data5_long5\n\n# A tibble: 1,044 × 2\n   Therapy                    Received\n   &lt;chr&gt;                      &lt;fct&gt;   \n 1 Radiation_Therapy          No      \n 2 Targeted_Molecular_Therapy Yes     \n 3 Radiation_Therapy          No      \n 4 Targeted_Molecular_Therapy Yes     \n 5 Radiation_Therapy          No      \n 6 Targeted_Molecular_Therapy No      \n 7 Radiation_Therapy          No      \n 8 Targeted_Molecular_Therapy No      \n 9 Radiation_Therapy          No      \n10 Targeted_Molecular_Therapy Yes     \n# ℹ 1,034 more rows\n\ng &lt;- ggplot(cancer_data5_long5, aes(x = Therapy, fill = Received))\ng + geom_bar() +\n  labs(x = \"Treatment Therapy\", y = \"Count\", \n       title = \"Stacked Bar Chart of Administered Treatments for Lung Cancer\") +\n  scale_x_discrete(labels = c(\"Radiation_Therapy\" = \"Radiation Therapy\", \n  \"Targeted_Molecular_Therapy\" = \"Targeted Molecular Therapy\"))"
+  },
+  {
+    "objectID": "Project2quarto.html#add-parsing-steps",
+    "href": "Project2quarto.html#add-parsing-steps",
+    "title": "project 2",
+    "section": "add parsing steps",
+    "text": "add parsing steps\n\nfirebrowse_query &lt;- function(endpoint, cancer) {\n  base &lt;- \"http://firebrowse.org/api/v1/Samples/\"\n  end &lt;- \"&page=1&page_size=3000&sort_by=cohort\"\n  endpoint &lt;- as_label(enquo(endpoint))\n  cancer &lt;- as_label(enquo(cancer))\n  \n  if (endpoint == \"mRNASeq\" & cancer == \"LUAD\") {\n    url &lt;- paste0(base, endpoint, \"?format=json&gene=met%2Cerbb2&cohort=\",\n                  cancer, \"&protocol=RSEM\", end)\n  } else if (endpoint == \"mRNASeq\" & cancer == \"BLCA\") {\n    url &lt;- paste0(base, endpoint, \"?format=json&gene=FGFR3%2Cerbb2&cohort=\",\n                  cancer, \"&protocol=RSEM\", end)\n  } else if (endpoint == \"mRNASeq\" & cancer == \"BRCA\") {\n    url &lt;- paste0(base, endpoint, \"?format=json&gene=brca2%2Cerbb2&cohort=\",\n                  cancer, \"&protocol=RSEM\", end)\n  } else if (endpoint == \"Clinical\") {\n    url &lt;- paste0(base, endpoint, \"?format=json&cohort=\",\n                  cancer, end)\n  } else {\n    url &lt;- \"Error: Endpoint or cancer type not recognized.\"\n  }\n  url\n  response &lt;- GET(url)\n  parsed &lt;- fromJSON(rawToChar(response$content))\n  cancer_data &lt;- as_tibble(parsed[[endpoint]])\n  return(cancer_data)\n}"
+  },
+  {
+    "objectID": "Project2quarto.html#test-1",
+    "href": "Project2quarto.html#test-1",
+    "title": "project 2",
+    "section": "Test",
+    "text": "Test\n\nfirebrowse_query(mRNASeq, LUAD)\n\n# A tibble: 1,152 × 8\n   cohort expression_log2 gene  geneID protocol sample_type\n   &lt;chr&gt;            &lt;dbl&gt; &lt;chr&gt;  &lt;int&gt; &lt;chr&gt;    &lt;chr&gt;      \n 1 LUAD              11.7 ERBB2   2064 RSEM     TP         \n 2 LUAD              12.6 ERBB2   2064 RSEM     TP         \n 3 LUAD              12.9 ERBB2   2064 RSEM     TP         \n 4 LUAD              11.4 ERBB2   2064 RSEM     TP         \n 5 LUAD              12.4 ERBB2   2064 RSEM     TP         \n 6 LUAD              12.4 ERBB2   2064 RSEM     TP         \n 7 LUAD              13.4 ERBB2   2064 RSEM     TP         \n 8 LUAD              12.8 ERBB2   2064 RSEM     TP         \n 9 LUAD              12.9 ERBB2   2064 RSEM     TP         \n10 LUAD              13.1 ERBB2   2064 RSEM     TP         \n# ℹ 1,142 more rows\n# ℹ 2 more variables: tcga_participant_barcode &lt;chr&gt;, `z-score` &lt;dbl&gt;"
+  }
+]

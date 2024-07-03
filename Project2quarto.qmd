@@ -1,0 +1,779 @@
+---
+title: "project 2"
+format: html
+editor: visual
+---
+
+### libraries
+
+```{r}
+library(tidyverse)
+library(jsonlite)
+library(dplyr)
+library(httr)
+
+```
+
+# 1a. Breast Cancer Clinical Query using firebrowse
+
+```{r}
+url1 <- "http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=BRCA&page=1&page_size=2000&sort_by=cohort"
+response1 <- GET(url1)
+parsed1 <- fromJSON(rawToChar(response1$content))
+
+cancer_data1 <- as_tibble(parsed1$Clinical) |> 
+  mutate(across(everything(), function(x) na_if(x, "NA"))) |>
+  select(
+    Patient_Id = patient_id,
+    Diagnosis_Age = age_at_initial_pathologic_diagnosis, 
+    Estrogen_Receptor_Status = breast_carcinoma_estrogen_receptor_status, 
+    Cohort = cohort, 
+    Gender = gender, 
+    Progesterone_Receptor_Status = breast_carcinoma_progesterone_receptor_status,
+    Histological_Type = histological_type,
+    Her2_Receptor_Status = lab_proc_her2_neu_immunohistochemistry_receptor_status,
+    Pathologic_M = pathologic_m,
+    Pathologic_N = pathologic_n,
+    Pathologic_T = pathologic_t,
+    Stage = pathologic_stage,
+    Race = race,
+    Radiation_Therapy = radiation_therapy,
+    Targeted_Molecular_Therapy = targeted_molecular_therapy) |>
+  mutate(Stage_Condensed = 
+           ifelse(Stage %in% c("stage i", "stage ia", "stage ib"), "Stage I",
+                  ifelse(Stage %in% c("stage ii", "stage iia", "stage iib"), 
+                         "Stage II",
+                         ifelse(Stage %in% c("stage iii", "stage iiia", 
+                                             "stage iiib", "stage iiic"), 
+                                "Stage III", 
+                                ifelse(Stage %in% "stage iv", "Stage IV",
+                                       ifelse(Stage %in% "stage x", "Stage X", 
+                                              NA)))))) |> 
+  mutate(Age_Grouping = 
+           ifelse(Diagnosis_Age <= 39, "Young", 
+                  ifelse(Diagnosis_Age >= 40 & Diagnosis_Age <= 64, "Middle Age",
+                         ifelse(Diagnosis_Age > 64, "Old", NA))))
+cancer_data1
+
+```
+
+## check for missing values
+
+```{r}
+#na_counts <- cancer_data1 |>
+#  summarize(across(everything(), function(x) sum(is.na(x))))
+#na_counts
+# Assuming cancer_data1 is your tibble
+#unique_values <- unique(cancer_data1$Her2_Receptor_Status)
+#unique_values <- unique(cancer_data1$Stage)
+#unique_values
+colSums(is.na(cancer_data1))
+#rowSums(is.na(cancer_data1))
+```
+
+## convert categorical to factor
+
+```{r}
+cancer_data1 <- cancer_data1 |>
+  mutate(Gender =  
+           factor(Gender, levels = c("female", "male"), labels = c("Female", "Male")), 
+         Estrogen_Receptor_Status = 
+           factor(Estrogen_Receptor_Status, levels = c("positive", "negative", 
+                                                       "indeterminate"),
+                  labels = c("Positive", "Negative", "Indeterminate")),
+         Progesterone_Receptor_Status = 
+           factor(Progesterone_Receptor_Status, levels = c("positive", "negative", 
+                                                           "indeterminate"),
+                  labels = c("Positive", "Negative", "Indeterminate")),
+         Her2_Receptor_Status = 
+           factor(Her2_Receptor_Status, levels = c("positive", "negative", 
+                                                    "equivocal", "indeterminate"),
+                  labels = c("Positive", "Negative", "Equivocal", "Indeterminate")),
+         Targeted_Molecular_Therapy = 
+           factor(Targeted_Molecular_Therapy, levels = c("yes", "no", NA),
+                                            labels = c("Yes", "No", "NA"), exclude = NULL),
+         Radiation_Therapy = 
+           factor(Radiation_Therapy, levels = c("yes", "no", NA),
+                                            labels = c("Yes", "No", "NA"), exclude = NULL), 
+         Age_Grouping = factor(Age_Grouping, levels = c("Young", "Middle Age",
+                                                        "Old")),
+         Race = factor(Race, levels = c("american indian or alaska native",
+                                        "asian", "black or african american",
+                                        "white"),
+                       labels = c("American Indian or Alaska Native",
+                                        "Asian", "Black or African American",
+                                        "White"))
+         ) 
+cancer_data1
+#colSums(is.na(cancer_data1))
+```
+
+# Contingency tables
+
+## Gender
+
+```{r}
+cancer_data1 |>
+  group_by(Gender) |>
+  summarize(count = n())
+```
+
+## Race
+
+```{r}
+cancer_data1 |>
+  drop_na(Race) |>
+  group_by(Race) |>
+  summarize(count = n())
+
+```
+
+#Stage
+
+```{r}
+cancer_data1 |>
+  drop_na(Stage) |>
+  group_by(Stage) |>
+  summarize(count = n())
+```
+
+## Receptor status
+
+```{r}
+cancer_data1 |>
+  select(Estrogen_Receptor_Status, Progesterone_Receptor_Status, 
+         Her2_Receptor_Status) |>
+  pivot_longer(cols = everything(), 
+               names_to = "Receptor", values_to = "Status") |>
+  drop_na(Status) |>
+  group_by(Status, Receptor) |>
+  summarize(count = n()) |>
+  pivot_wider(names_from = Status, values_from = count, values_fill = 0)
+```
+
+## treatment
+
+```{r}
+cancer_data1_long1 <- cancer_data1 |>
+  select(Radiation_Therapy, Targeted_Molecular_Therapy) |>
+  pivot_longer(cols = everything(), 
+               names_to = "Therapy", values_to = "Received")
+cancer_data1_long1
+
+g <- ggplot(cancer_data1_long1, aes(x = Therapy, fill = Received))
+g + geom_bar() +
+  labs(x = "Treatment Therapy", y = "Count", 
+       title = "Stacked Bar Chart of Administered Treatments for Breast Cancer") +
+  scale_x_discrete(labels = c("Radiation_Therapy" = "Radiation Therapy", 
+  "Targeted_Molecular_Therapy" = "Targeted Molecular Therapy")) +
+  labs(fill = "Treatment Received")
+```
+
+## Receptor Status
+
+```{r}
+cancer_data1_long2 <- cancer_data1 |>
+  select(Estrogen_Receptor_Status, Progesterone_Receptor_Status, Her2_Receptor_Status) |>
+  pivot_longer(cols = everything(), 
+               names_to = "Receptor", values_to = "Status") |>
+  drop_na(Status)
+cancer_data1_long2
+
+g <- ggplot(cancer_data1_long2, aes(x = Receptor, fill = Status))
+g + geom_bar() +
+  labs(x = "Receptor", y = "Count", title = "Stacked Bar Chart of Receptor Status") +
+  scale_x_discrete(labels = c("Estrogen_Receptor_Status" = "Estrogen Receptor", 
+  "Progesterone_Receptor_Status" = "Progesterone Receptor", 
+  "Her2_Receptor_Status" = "Her2 Receptor")) +
+  scale_fill_manual(values = c("Positive" = "pink",
+                               "Negative" = "skyblue",
+                               "Indeterminate" = "purple",
+                               "Equivocal" = "cornflowerblue"
+                               ))
+```
+
+## Positive Receptor Status by Age
+
+```{r}
+cancer_data1_long3 <- cancer_data1 |>
+  select(Estrogen_Receptor_Status, Progesterone_Receptor_Status, 
+                Her2_Receptor_Status, Age_Grouping)|>
+  pivot_longer(cols = 
+                 c(Estrogen_Receptor_Status, Progesterone_Receptor_Status, Her2_Receptor_Status),
+               names_to = "Receptor_Type", values_to = "Receptor_Status") |>
+  filter(Receptor_Status == "Positive") |>
+  group_by(Age_Grouping) |>
+  mutate(total_count = n()) |>
+  group_by(Age_Grouping, Receptor_Type) |>
+  summarize(count = n(), total_count = dplyr::first(total_count), .groups = "drop") |>
+  mutate(Proportion = count /total_count)
+
+cancer_data1_long3
+
+g <- ggplot(cancer_data1_long3, aes(x = Age_Grouping, y = Proportion, fill = Receptor_Type))
+g + geom_bar(stat = "identity") +
+  labs(x = "Age Group", y = "Proportion",
+       title = "Stacked Bar Chart of Positive Receptor Status by Age") + 
+  scale_fill_manual(values = c("Estrogen_Receptor_Status" = "pink",
+                               "Progesterone_Receptor_Status" = "skyblue",
+                               "Her2_Receptor_Status" = "cornflowerblue"
+                               ),
+                    labels = c("Estrogen_Receptor_Status" = "Estrogen Positive" ,
+                               "Progesterone_Receptor_Status" = "Progesterone Positive",
+                               "Her2_Receptor_Status" = "Her2 Positive")) +
+  labs(fill = "Receptor")
+  
+```
+
+## test
+
+
+
+## faceted plot of Positive Receptor Status by Age
+
+```{r}
+g <- ggplot(cancer_data1_long3, aes(x = Age_Grouping, y = Proportion, fill = Receptor_Type))
+g + geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Age Group", y = "Proportion",
+       title = "Stacked Bar Chart of Positive Receptor Status by Age") + 
+  scale_fill_manual(values = c("Estrogen_Receptor_Status" = "pink",
+                               "Progesterone_Receptor_Status" = "skyblue",
+                               "Her2_Receptor_Status" = "cornflowerblue"
+                               ),
+                    labels = c("Estrogen_Receptor_Status" = "Estrogen Positive" ,
+                               "Progesterone_Receptor_Status" = "Progesterone Positive",
+                               "Her2_Receptor_Status" = "Her2 Positive")) +
+  labs(fill = "Receptor Status")
+```
+
+# 1b. Breast Cancer mRNA Query using firebrowse
+
+```{r}
+url2 <- "http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=brca2%2Cerbb2&cohort=BRCA&protocol=RSEM&page=1&page_size=3000&sort_by=cohort"
+response2 <- GET(url2)
+parsed2 <- fromJSON(rawToChar(response2$content))
+cancer_data2 <- as_tibble(parsed2$mRNASeq) |>
+  select(Cohort = cohort, "Gene_Expression" = expression_log2,
+         "Gene" = gene, TCGA_Participant_Barcode = tcga_participant_barcode) |>
+  mutate(Gene = ifelse(Gene == "ERBB2", "HER2", Gene)) 
+  
+cancer_data2
+#colSums(is.na(cancer_data2))
+```
+
+
+# density plot of breast cancer gene expression
+
+```{r}
+g <- ggplot(cancer_data2, aes(x = Gene_Expression))
+g + geom_density(alpha = 0.5, aes(fill = Gene)) +
+  labs(x = "Gene Expression", y = "Density", 
+       title = "Expression of BRCA2 and HER2 in Breast Cancer")
+```
+
+#histogram of breast cancer gene expression
+
+```{r}
+g <- ggplot(cancer_data2, aes(x = Gene_Expression))
+g + geom_histogram(alpha = 0.5, binwidth = 1, aes(fill = Gene)) +
+  labs(x = "Gene Expression", y = "Density", 
+       title = "Expression of BRCA2 and HER2 in Breast Cancer")
+```
+
+
+# box plot of breast cancer gene expression
+
+```{r}
+g <- ggplot(cancer_data2)
+g + geom_boxplot(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
+  labs(x = "Gene", y = "Gene Expression", 
+       title = "Expression of BRCA2 and HER2 in Breast Cancer")
+```
+
+# violin plot
+
+```{r}
+g <- ggplot(cancer_data2)
+g + geom_violin(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
+  labs(x = "Gene", y = "Gene Expression", 
+       title = "Expression of BRCA2 and HER2 in Breast Cancer")
+```
+
+# BLCA Clinical query using Firebrowse
+
+```{r}
+url3 <- "http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=BLCA&page=1&page_size=2000&sort_by=cohort"
+response3 <- GET(url3)
+parsed3 <- fromJSON(rawToChar(response3$content))
+cancer_data3 <- as_tibble(parsed3$Clinical) |>
+  mutate(across(everything(), function(x) na_if(x, "NA"))) |>
+  select(
+    Patient_Id = patient_id,
+    Diagnosis_Age = age_at_initial_pathologic_diagnosis, 
+    Cohort = cohort, 
+    Gender = gender, 
+    Primary_Therapy_Outcome = primary_therapy_outcome_success,
+    Additional_Treatment_Outcome = additional_treatment_completion_success_outcome,
+    Diagnosis_Subtype = diagnosis_subtype,
+    Histological_Type = histological_type,
+    Lymphovascular_Invasion = lymphovascular_invasion_present,
+    Pathologic_M = pathologic_m,
+    Pathologic_N = pathologic_n,
+    Pathologic_T = pathologic_t,
+    Stage = pathologic_stage,
+    Race = race) |>
+  mutate(Additional_Treatment_Outcome =
+           ifelse(Additional_Treatment_Outcome == 
+                    "complete response", "complete remission/response",
+                  ifelse(Additional_Treatment_Outcome == 
+                           "partial response", "partial remission/response",
+                         Additional_Treatment_Outcome))) |>
+  mutate(Age_Grouping = 
+           ifelse(Diagnosis_Age <= 39, "Young", 
+                  ifelse(Diagnosis_Age >= 40 & Diagnosis_Age <= 64, "Middle Age",
+                         ifelse(Diagnosis_Age > 64, "Old", NA))))
+           
+cancer_data3
+```
+
+## check for missing values
+
+```{r}
+colSums(is.na(cancer_data3))
+```
+
+# convert categories to factors
+
+```{r}
+cancer_data3 <- cancer_data3 |>
+  mutate(Gender =  
+           factor(Gender, levels = c("female", "male"), labels = c("Female", "Male")), 
+         Race = factor(Race, levels = c("american indian or alaska native",
+                                        "asian", "black or african american",
+                                        "white"), 
+                       labels = c("American Indian or Alaska Native",
+                                  "Asian", "Black or African American", 
+                                  "White")),
+         Additional_Treatment_Outcome = 
+           factor(Additional_Treatment_Outcome,
+                  levels = c("complete remission/response", 
+                             "partial remission/response", 
+                             "stable disease", "progressive disease", NA),
+                  labels = 
+                  c("Complete Remission/Response", "Partial Remission/Response", 
+                    "Stable Disease", "Progressive Disease", "NA"), 
+                  exclude = NULL),
+         Primary_Therapy_Outcome = 
+           factor(Primary_Therapy_Outcome,
+                  levels = c("complete remission/response", 
+                             "partial remission/response", 
+                             "stable disease", "progressive disease", NA),
+                  labels = 
+                  c("Complete Remission/Response", "Partial Remission/Response", 
+                    "Stable Disease", "Progressive Disease", "NA"), 
+                  exclude = NULL),
+         Age_Grouping = factor(Age_Grouping, levels = c("Young", "Middle Age",
+                                                        "Old"))
+         )
+ 
+cancer_data3
+```
+
+## check missing values again
+
+```{r}
+colSums(is.na(cancer_data3))
+```
+
+# Contingency tables
+
+## Gender
+
+```{r}
+cancer_data3 |>
+  group_by(Gender) |>
+  summarize(count = n())
+```
+
+## Race
+
+```{r}
+cancer_data3 |>
+  drop_na(Race) |>
+  group_by(Race) |>
+  summarize(count = n())
+
+```
+
+#Stage
+
+```{r}
+cancer_data3 |>
+  drop_na(Stage) |>
+  group_by(Stage) |>
+  summarize(count = n())
+```
+
+# plot of primary and additional treatment
+
+```{r}
+cancer_data3_long1 <- cancer_data3 |>
+  select(Primary_Therapy_Outcome, Additional_Treatment_Outcome) |>
+  pivot_longer(cols = everything(), 
+               names_to = "Therapy", values_to = "Outcome") |>
+  mutate(Therapy = factor(Therapy, 
+                levels = c("Primary_Therapy_Outcome", 
+                           "Additional_Treatment_Outcome")))
+cancer_data3_long1
+
+g <- ggplot(cancer_data3_long1, aes(x = Therapy, fill = Outcome))
+g + geom_bar() +
+  labs(x = "Therapy Type", y = "Count", 
+       title = "Stacked Bar Chart of Outcome of Treatment Types for Lung Cancer") +
+  scale_x_discrete(labels = c("Primary_Therapy_Outcome" = "Primary",
+                              "Additional_Treatment_Outcome" = "Additional"))
+```
+
+# cancer stage by age
+
+```{r}
+g <- ggplot(cancer_data3 |> group_by(Age_Grouping, Stage) |> drop_na(Stage), 
+            aes(x = Age_Grouping, fill = Stage))
+g + geom_bar() +
+  labs(x = "Age Group", y = "Count",
+       title = "Stacked Bar Chart of Cancer Stage by Age Group") + 
+  scale_fill_manual(values = c("stage i" = "pink",
+                               "stage ii" = "skyblue",
+                               "stage iii" = "cornflowerblue",
+                               "stage iv" = "purple"
+                               ),
+                    labels = c("stage i" = "I" ,
+                               "stage ii" = "II",
+                               "stage iii" = "III",
+                               "stage iv" = "V")) +
+  labs(fill = "Stage")
+```
+
+# BLCA gene expression
+
+```{r}
+url4 <- "http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=FGFR3%2Cerbb2&cohort=BLCA&protocol=RSEM&page=1&page_size=3000&sort_by=cohort"
+response4 <- GET(url4)
+parsed4 <- fromJSON(rawToChar(response4$content))
+cancer_data4 <- as_tibble(parsed4$mRNASeq) |>
+  select(Cohort = cohort, "Gene_Expression" = expression_log2,
+         "Gene" = gene, TCGA_Participant_Barcode = tcga_participant_barcode) |>
+  mutate(Gene = ifelse(Gene == "ERBB2", "HER2", Gene)) 
+cancer_data4
+```
+
+#center and spread
+
+```{r}
+cancer_data4 |>
+  group_by(Gene) |>
+  summarize(across(Gene_Expression, .fns = list("Mean" = mean,
+                                     "Median" = median,
+                                     "Standard_Deviation" = sd,
+                                     "Variance" = var), 
+                   .names = "{.fn}_{.col}"))
+```
+
+# BLCA density plot
+
+```{r}
+g <- ggplot(cancer_data4, aes(x = Gene_Expression))
+g + geom_density(alpha = 0.5, aes(fill = Gene)) +
+  labs(x = "Gene Expression", y = "Density", 
+       title = "Expression of FGFR3 and HER2 in Bladder Cancer")
+```
+
+# BLCA box plot
+
+```{r}
+g <- ggplot(cancer_data4)
+g + geom_boxplot(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
+  labs(x = "Gene", y = "Gene Expression", 
+       title = "Expression of FGFR3 and HER2 in Bladder Cancer")
+```
+
+# BLCA violin plot
+
+```{r}
+g <- ggplot(cancer_data4)
+g + geom_violin(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
+  labs(x = "Gene", y = "Gene Expression", 
+       title = "Expression of FGFR3 and HER2 in Bladder Cancer")
+```
+
+# LUAD Clinical query using Firebrowse
+
+```{r}
+url5 <- "http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=LUAD&page=1&page_size=2000&sort_by=cohort"
+response5 <- GET(url5)
+parsed5 <- fromJSON(rawToChar(response5$content))
+cancer_data5 <- as_tibble(parsed5$Clinical) |> 
+  mutate(across(everything(), function(x) na_if(x, "NA"))) |>
+  select(
+    Patient_Id = patient_id,
+    Diagnosis_Age = age_at_initial_pathologic_diagnosis,
+    PatientId = patient_id,
+    Cohort = cohort, 
+    Gender = gender, 
+    Histological_Type = histological_type,
+    Primary_Therapy_Outcome = primary_therapy_outcome_success,
+    Pathologic_M = pathologic_m,
+    Pathologic_N = pathologic_n,
+    Pathologic_T = pathologic_t,
+    Stage = pathologic_stage,
+    Race = race,
+    Radiation_Therapy = radiation_therapy,
+    Targeted_Molecular_Therapy = targeted_molecular_therapy)
+cancer_data5
+#unique_values <-unique(cancer_data5$Primary_Therapy_Outcome)
+#unique_values
+
+```
+
+## check for missing values
+
+```{r}
+colSums(is.na(cancer_data5))
+```
+
+# convert categories to factors
+
+```{r}
+cancer_data5 <- cancer_data5 |>
+  mutate(Gender =  
+           factor(Gender, levels = c("female", "male"), labels = c("Female", "Male")), 
+         Targeted_Molecular_Therapy = 
+           factor(Targeted_Molecular_Therapy, levels = c("yes", "no"),
+                                            labels = c("Yes", "No")),
+         Radiation_Therapy = 
+           factor(Radiation_Therapy, levels = c("yes", "no"),
+                                            labels = c("Yes", "No")), 
+         Race = factor(Race, levels = c("american indian or alaska native",
+                                        "asian", "black or african american",
+                                        "white"), 
+                       labels = c("American Indian or Alaska Native",
+                                  "Asian", "Black or African American", 
+                                  "White")),
+         Primary_Therapy_Outcome = 
+           factor(Primary_Therapy_Outcome, 
+                  levels = c("complete remission/response",
+                             "partial remission/response",
+                             "stable disease", "progressive disease"), 
+                  labels = c("Complete disease Remission/Response",
+                             "Partial Remission/Response",
+                             "Stable Disease", "Progressive Disease"))
+         )
+
+cancer_data5
+```
+
+## check missing values again
+
+```{r}
+colSums(is.na(cancer_data5))
+```
+
+# Contingency tables
+
+## Gender
+
+```{r}
+cancer_data5 |>
+  group_by(Gender) |>
+  summarize(count = n())
+```
+
+## Race
+
+```{r}
+cancer_data5 |>
+  drop_na(Race) |>
+  group_by(Race) |>
+  summarize(count = n())
+
+```
+
+## Stage
+
+```{r}
+cancer_data5 |>
+  drop_na(Stage) |>
+  group_by(Stage) |>
+  summarize(count = n())
+```
+
+## treatment
+
+```{r}
+cancer_data5_long5 <- cancer_data5 |>
+  select(Radiation_Therapy, Targeted_Molecular_Therapy) |>
+  pivot_longer(cols = everything(), 
+               names_to = "Therapy", values_to = "Received")
+cancer_data5_long5
+
+g <- ggplot(cancer_data5_long5, aes(x = Therapy, fill = Received))
+g + geom_bar() +
+  labs(x = "Treatment Therapy", y = "Count", 
+       title = "Stacked Bar Chart of Administered Treatments for Lung Cancer") +
+  scale_x_discrete(labels = c("Radiation_Therapy" = "Radiation Therapy", 
+  "Targeted_Molecular_Therapy" = "Targeted Molecular Therapy"))
+```
+
+# Therapy Outcome
+
+```{r}
+g <- ggplot(cancer_data5 |> drop_na(Primary_Therapy_Outcome), 
+            aes(x = Primary_Therapy_Outcome, fill = Primary_Therapy_Outcome))
+g + geom_bar() +
+  labs(x = "Outcome", y = "Count", 
+       title = "Bar Chart of Primary Therapy Outcome for Lung Cancer") +
+  labs(fill = "Outcome") +
+  coord_flip()
+```
+
+# LUAD gene expression from Firebrowse
+
+```{r}
+url6 <- "http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=met%2Cerbb2&cohort=LUAD&protocol=RSEM&page=1&page_size=3000&sort_by=cohort"
+response6 <- GET(url6)
+parsed6 <- fromJSON(rawToChar(response6$content))
+cancer_data6 <- as_tibble(parsed6$mRNASeq) |>
+  select(Cohort = cohort, "Gene_Expression" = expression_log2,
+         "Gene" = gene, TCGA_Participant_Barcode = tcga_participant_barcode) |>
+  mutate(Gene = ifelse(Gene == "ERBB2", "HER2", Gene)) 
+cancer_data6
+```
+
+# center and spread
+
+```{r}
+cancer_data6 |>
+  group_by(Gene) |>
+  summarize(across(Gene_Expression, .fns = list("Mean" = mean,
+                                     "Median" = median,
+                                     "Standard_Deviation" = sd,
+                                     "Variance" = var), 
+                   .names = "{.fn}_{.col}"))
+```
+
+# density plot of lung cancer gene expression
+
+```{r}
+g <- ggplot(cancer_data6, aes(x = Gene_Expression))
+g + geom_density(alpha = 0.5, aes(fill = Gene)) +
+  labs(x = "Gene Expression", y = "Density", 
+       title = "Expression of MET and HER2 in Lung Cancer")
+```
+
+# box plot of lung cancer gene expression
+
+```{r}
+g <- ggplot(cancer_data6)
+g + geom_boxplot(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
+  labs(x = "Gene", y = "Gene Expression", 
+       title = "Expression of MET and HER2 in Lung Cancer")
+```
+
+# violin plot
+
+```{r}
+g <- ggplot(cancer_data6)
+g + geom_violin(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
+  labs(x = "Gene", y = "Gene Expression", 
+       title = "Expression of MET and HER2 in Lung Cancer")
+```
+
+# Function for API Query
+
+
+URLS:
+
+http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=BRCA&page=1&page_size=2000&sort_by=cohort
+http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=BLCA&page=1&page_size=2000&sort_by=cohort
+http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=LUAD&page=1&page_size=2000&sort_by=cohort
+http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=brca2%2Cerbb2&cohort=BRCA&protocol=RSEM&page=1&page_size=3000&sort_by=cohort
+http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=FGFR3%2Cerbb2&cohort=BLCA&protocol=RSEM&page=1&page_size=3000&sort_by=cohort
+http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=met%2Cerbb2&cohort=LUAD&protocol=RSEM&page=1&page_size=3000&sort_by=cohort
+
+```{r}
+firebrowse_query <- function(endpoint, cancer) {
+  base <- "http://firebrowse.org/api/v1/Samples/"
+  end <- "&page=1&page_size=3000&sort_by=cohort"
+  endpoint <- as_label(enquo(endpoint))
+  cancer <- as_label(enquo(cancer))
+  
+  if (endpoint == "mRNASeq" & cancer == "LUAD") {
+    url <- paste0(base, endpoint, "?format=json&gene=met%2Cerbb2&cohort=",
+                  cancer, "&protocol=RSEM", end)
+  } else if (endpoint == "mRNASeq" & cancer == "BLCA") {
+    url <- paste0(base, endpoint, "?format=json&gene=FGFR3%2Cerbb2&cohort=",
+                  cancer, "&protocol=RSEM", end)
+  } else if (endpoint == "mRNASeq" & cancer == "BRCA") {
+    url <- paste0(base, endpoint, "?format=json&gene=brca2%2Cerbb2&cohort=",
+                  cancer, "&protocol=RSEM", end)
+  } else if (endpoint == "Clinical") {
+    url <- paste0(base, endpoint, "?format=json&cohort=",
+                  cancer, end)
+  } else {
+    url <- "Error: Endpoint or cancer type not recognized."
+  }
+  
+  return(url)
+}
+
+```
+
+
+# Testing the function
+
+```{r}
+# Testing the function
+firebrowse_query(mRNASeq, LUAD)
+firebrowse_query(Clinical, BLCA)
+
+```
+
+## add parsing steps
+
+```{r}
+firebrowse_query <- function(endpoint, cancer) {
+  base <- "http://firebrowse.org/api/v1/Samples/"
+  end <- "&page=1&page_size=3000&sort_by=cohort"
+  endpoint <- as_label(enquo(endpoint))
+  cancer <- as_label(enquo(cancer))
+  
+  if (endpoint == "mRNASeq" & cancer == "LUAD") {
+    url <- paste0(base, endpoint, "?format=json&gene=met%2Cerbb2&cohort=",
+                  cancer, "&protocol=RSEM", end)
+  } else if (endpoint == "mRNASeq" & cancer == "BLCA") {
+    url <- paste0(base, endpoint, "?format=json&gene=FGFR3%2Cerbb2&cohort=",
+                  cancer, "&protocol=RSEM", end)
+  } else if (endpoint == "mRNASeq" & cancer == "BRCA") {
+    url <- paste0(base, endpoint, "?format=json&gene=brca2%2Cerbb2&cohort=",
+                  cancer, "&protocol=RSEM", end)
+  } else if (endpoint == "Clinical") {
+    url <- paste0(base, endpoint, "?format=json&cohort=",
+                  cancer, end)
+  } else {
+    url <- "Error: Endpoint or cancer type not recognized."
+  }
+  url
+  response <- GET(url)
+  parsed <- fromJSON(rawToChar(response$content))
+  cancer_data <- as_tibble(parsed[[endpoint]])
+  return(cancer_data)
+}
+```
+
+
+## Test
+
+```{r}
+firebrowse_query(mRNASeq, LUAD)
+```
+
