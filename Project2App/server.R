@@ -55,7 +55,7 @@ function(input, output, session) {
     output$cancerTable <- renderDT({
       cancer_data()
     }, plugins = "ellipsis", 
-    options = list(lengthMenu = c(10, 15, 40, 90), scrollX = TRUE,
+    options = list(scrollX = TRUE,
                    autoWidth = TRUE,
                    columnDefs = list(
                      list(

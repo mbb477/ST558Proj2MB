@@ -227,8 +227,6 @@ g + geom_bar(stat = "identity") +
 
 ## test
 
-
-
 ## faceted plot of Positive Receptor Status by Age
 
 ```{r}
@@ -261,7 +259,6 @@ cancer_data2
 #colSums(is.na(cancer_data2))
 ```
 
-
 # density plot of breast cancer gene expression
 
 ```{r}
@@ -279,7 +276,6 @@ g + geom_histogram(alpha = 0.5, binwidth = 1, aes(fill = Gene)) +
   labs(x = "Gene Expression", y = "Density", 
        title = "Expression of BRCA2 and HER2 in Breast Cancer")
 ```
-
 
 # box plot of breast cancer gene expression
 
@@ -690,15 +686,9 @@ g + geom_violin(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
 
 # Function for API Query
 
-
 URLS:
 
-http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=BRCA&page=1&page_size=2000&sort_by=cohort
-http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=BLCA&page=1&page_size=2000&sort_by=cohort
-http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=LUAD&page=1&page_size=2000&sort_by=cohort
-http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=brca2%2Cerbb2&cohort=BRCA&protocol=RSEM&page=1&page_size=3000&sort_by=cohort
-http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=FGFR3%2Cerbb2&cohort=BLCA&protocol=RSEM&page=1&page_size=3000&sort_by=cohort
-http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=met%2Cerbb2&cohort=LUAD&protocol=RSEM&page=1&page_size=3000&sort_by=cohort
+http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=BRCA&page=1&page_size=2000&sort_by=cohort http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=BLCA&page=1&page_size=2000&sort_by=cohort http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=LUAD&page=1&page_size=2000&sort_by=cohort http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=brca2%2Cerbb2&cohort=BRCA&protocol=RSEM&page=1&page_size=3000&sort_by=cohort http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=FGFR3%2Cerbb2&cohort=BLCA&protocol=RSEM&page=1&page_size=3000&sort_by=cohort http://firebrowse.org/api/v1/Samples/mRNASeq?format=json&gene=met%2Cerbb2&cohort=LUAD&protocol=RSEM&page=1&page_size=3000&sort_by=cohort
 
 ```{r}
 firebrowse_query <- function(endpoint, cancer) {
@@ -727,7 +717,6 @@ firebrowse_query <- function(endpoint, cancer) {
 }
 
 ```
-
 
 # Testing the function
 
@@ -770,10 +759,8 @@ firebrowse_query <- function(endpoint, cancer) {
 }
 ```
 
-
 ## Test
 
 ```{r}
 firebrowse_query(mRNASeq, LUAD)
 ```
-
