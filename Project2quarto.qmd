@@ -20,7 +20,6 @@ library(httr)
 url1 <- "http://firebrowse.org/api/v1/Samples/Clinical?format=json&cohort=BRCA&page=1&page_size=2000&sort_by=cohort"
 response1 <- GET(url1)
 parsed1 <- fromJSON(rawToChar(response1$content))
-
 cancer_data1 <- as_tibble(parsed1$Clinical) |> 
   mutate(across(everything(), function(x) na_if(x, "NA"))) |>
   select(
@@ -128,7 +127,7 @@ cancer_data1 |>
 
 ```
 
-#Stage
+# Stage
 
 ```{r}
 cancer_data1 |>
@@ -136,6 +135,37 @@ cancer_data1 |>
   group_by(Stage) |>
   summarize(count = n())
 ```
+
+
+# test
+
+```{r}
+#| error: true
+ggplot(cancer_data1 |> drop_na(Race) |> group_by(Race) |> 
+          summarize(count = n()), aes(x = "Race", fill = Category, y = count)) +
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start = 0) +
+  theme_void() +
+  theme(legend.position = "bottom") +
+  labs(title = "Your Title Here", fill = "Legend Title", y = "Count")
+```
+
+
+
+# test
+
+```{r}
+library(plotly)
+# Plotly pie chart
+plot_ly(cancer_data1 |> drop_na(Stage_Condensed) |> group_by(Stage_Condensed) |> 
+          summarize(count = n()), labels = ~Stage_Condensed, 
+        values = ~count, type = "pie") %>%
+  layout(title = "Interactive Pie Chart of Cancer Stage Distriubtion in Breast Cancer",
+         legend = list(orientation = "h"))
+         
+
+```
+
 
 ## Receptor status
 
@@ -437,7 +467,8 @@ g <- ggplot(cancer_data3 |> group_by(Age_Grouping, Stage) |> drop_na(Stage),
             aes(x = Age_Grouping, fill = Stage))
 g + geom_bar() +
   labs(x = "Age Group", y = "Count",
-       title = "Stacked Bar Chart of Cancer Stage by Age Group") + 
+       title = 
+         "Stacked Bar Chart of Cancer Stage by Age Group in Bladder Cancer") + 
   scale_fill_manual(values = c("stage i" = "pink",
                                "stage ii" = "skyblue",
                                "stage iii" = "cornflowerblue",
@@ -463,7 +494,7 @@ cancer_data4 <- as_tibble(parsed4$mRNASeq) |>
 cancer_data4
 ```
 
-#center and spread
+# center and spread
 
 ```{r}
 cancer_data4 |>
@@ -511,7 +542,6 @@ parsed5 <- fromJSON(rawToChar(response5$content))
 cancer_data5 <- as_tibble(parsed5$Clinical) |> 
   mutate(across(everything(), function(x) na_if(x, "NA"))) |>
   select(
-    Patient_Id = patient_id,
     Diagnosis_Age = age_at_initial_pathologic_diagnosis,
     PatientId = patient_id,
     Cohort = cohort, 
@@ -608,6 +638,7 @@ cancer_data5 |>
 ```{r}
 cancer_data5_long5 <- cancer_data5 |>
   select(Radiation_Therapy, Targeted_Molecular_Therapy) |>
+  drop_na(Radiation_Therapy, Targeted_Molecular_Therapy) |>
   pivot_longer(cols = everything(), 
                names_to = "Therapy", values_to = "Received")
 cancer_data5_long5
@@ -764,3 +795,155 @@ firebrowse_query <- function(endpoint, cancer) {
 ```{r}
 firebrowse_query(mRNASeq, LUAD)
 ```
+
+
+
+
+
+
+# cBioPortal
+
+```{r}
+url <- "https://www.cbioportal.org/api/studies/brca_tcga_pan_can_atlas_2018/clinical-data?clinicalDataType=SAMPLE&projection=SUMMARY&pageSize=10000000&pageNumber=0&direction=ASC"
+response <- GET(url)
+str(response)
+parsed <- fromJSON(rawToChar(response$content))
+str(parsed)
+cancer_parsed <- as_tibble(parsed)
+cancer_data <- cancer_parsed |>
+  pivot_wider(
+    id_cols = c(uniqueSampleKey, uniquePatientKey, sampleId, patientId, studyId),
+    names_from = clinicalAttributeId,
+    values_from = value)
+cancer_data <- cancer_data |>
+  select(uniquePatientKey, patientId, CANCER_TYPE, CANCER_TYPE_DETAILED, 
+         FRACTION_GENOME_ALTERED, MSI_SCORE_MANTIS, MUTATION_COUNT, TUMOR_TYPE,
+         TMB_NONSYNONYMOUS)
+cancer_data
+```
+
+# missing values
+
+```{r}
+colSums(is.na(cancer_data))
+```
+
+
+
+
+# Updatated function with ciobportal
+
+```{r}
+api_query <- function(endpoint, cancer) {
+  base <- "http://firebrowse.org/api/v1/Samples/"
+  end <- "&page=1&page_size=3000&sort_by=cohort"
+  endpoint <- as_label(enquo(endpoint))
+  cancer <- as_label(enquo(cancer))
+  
+  if (endpoint == "mRNASeq" & cancer == "LUAD") {
+    url <- paste0(base, endpoint, "?format=json&gene=met%2Cerbb2&cohort=",
+                  cancer, "&protocol=RSEM", end)
+  } else if (endpoint == "mRNASeq" & cancer == "BLCA") {
+    url <- paste0(base, endpoint, "?format=json&gene=FGFR3%2Cerbb2&cohort=",
+                  cancer, "&protocol=RSEM", end)
+  } else if (endpoint == "mRNASeq" & cancer == "BRCA") {
+    url <- paste0(base, endpoint, "?format=json&gene=brca2%2Cerbb2&cohort=",
+                  cancer, "&protocol=RSEM", end)
+  } else if (endpoint == "Clinical") {
+    url <- paste0(base, endpoint, "?format=json&cohort=",
+                  cancer, end)
+  } else if (endpoint == "cbioClinical" & cancer == "BRCA") {
+    url <- paste0("https://www.cbioportal.org/api/studies/brca_tcga_pan_can_",
+    "atlas_2018/clinical-data?clinicalDataType=SAMPLE&projection=SUMMARY&",
+    "pageSize=25000&pageNumber=0&direction=ASC")
+  } else {
+    stop("Error")
+  }
+  
+  response <- GET(url)
+  parsed <- fromJSON(rawToChar(response$content))
+  if (endpoint == "Clinical" | endpoint == "mRNASeq") {
+    cancer_data <- as_tibble(parsed[[endpoint]])
+  } else if (endpoint == "cbioClinical") {
+    cancer_data <- as_tibble(parsed) |>
+      pivot_wider(
+        id_cols = c(uniqueSampleKey, uniquePatientKey, sampleId, patientId, 
+                    studyId), names_from = clinicalAttributeId, 
+        values_from = value)
+  } else {
+    stop("Error")
+  }
+  
+  return(cancer_data)
+}
+
+
+```
+
+"https://www.cbioportal.org/api/studies/brca_tcga_pan_can_atlas_2018/clinical-data?clinicalDataType=SAMPLE&projection=SUMMARY&pageSize=10000000&pageNumber=0&direction=ASC"
+
+## test funtion
+
+```{r}
+api_query(cbioClinical, BRCA)
+```
+
+
+## test again
+
+```{r}
+api_query(mRNASeq, BRCA)
+```
+
+
+
+# Bubble Plot 1
+
+b <- ggplot(df, aes(x = wt, y = mpg))
+b + geom_point(aes(color = cyl, size = qsec), alpha = 0.5) +
+  scale_fill_manual(values = c("#00AFBB", "#E7B800", "#FC4E07")) +
+  scale_size(range = c(0.5, 12))  # Adjust the range of points size
+
+```{r}
+
+b <- ggplot(cancer_data |>
+              mutate(MSI_SCORE_MANTIS = as.numeric(MSI_SCORE_MANTIS), 
+                     FRACTION_GENOME_ALTERED = 
+                       as.numeric(FRACTION_GENOME_ALTERED),
+                     MUTATION_COUNT = as.numeric(MUTATION_COUNT)) |>
+              drop_na(MUTATION_COUNT, MSI_SCORE_MANTIS, 
+                      FRACTION_GENOME_ALTERED), 
+            aes(x = log2(MUTATION_COUNT + 1), y = MSI_SCORE_MANTIS))
+b + geom_point(aes(color = CANCER_TYPE_DETAILED, 
+                   size = FRACTION_GENOME_ALTERED), alpha = 0.4) +
+  scale_fill_manual(values = c("darkturquoise", "pink", "cornflowerblue",
+                                  "darkorchid", "darkseagreen", "deeppink4")) +
+  labs(x = "Mutation Count", y = "Microsatellite Instability Score")
+  
+
+
+```
+
+
+# Bubble Plot 2
+
+```{r}
+b <- ggplot(cancer_data |>
+              mutate(MSI_SCORE_MANTIS = as.numeric(MSI_SCORE_MANTIS), 
+                     FRACTION_GENOME_ALTERED = 
+                       as.numeric(FRACTION_GENOME_ALTERED),
+                     TMB_NONSYNONYMOUS = as.numeric(TMB_NONSYNONYMOUS),
+                     MUTATION_COUNT = as.numeric(MUTATION_COUNT)) |>
+              drop_na(MUTATION_COUNT, MSI_SCORE_MANTIS,
+                      FRACTION_GENOME_ALTERED, TMB_NONSYNONYMOUS),
+            aes(x = log2(TMB_NONSYNONYMOUS + 1), y = log2(MUTATION_COUNT + 1)))
+b + geom_point(aes(color = CANCER_TYPE_DETAILED, 
+                   size = MSI_SCORE_MANTIS), alpha = 0.3) +
+  scale_fill_manual(values = c("darkturquoise", "pink", "cornflowerblue",
+                                  "darkorchid", "cornsilk", "deeppink4")) +
+  labs(x = "log2 Tumor Mutation Burden", y = "log2 Mutation Count", 
+       color = "Detailed Cancer Type",
+       size = " Microsatellite Instability Score")
+  
+```
+
