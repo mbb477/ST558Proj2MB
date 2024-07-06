@@ -5,34 +5,64 @@ library(jsonlite)
 library(DT)
 
 function(input, output, session) {
-  cancer_data <- reactive({
-    firebrowse_query <- function(endpoint, cancer) {
-      base <- "http://firebrowse.org/api/v1/Samples/"
-      end <- "&page=1&page_size=3000&sort_by=cohort"
-      
-      if (endpoint == "mRNASeq" & cancer == "LUAD") {
-        url <- paste0(base, endpoint, "?format=json&gene=met%2Cerbb2&cohort=",
-                      cancer, "&protocol=RSEM", end)
-      } else if (endpoint == "mRNASeq" & cancer == "BLCA") {
-        url <- paste0(base, endpoint, "?format=json&gene=FGFR3%2Cerbb2&cohort=",
-                      cancer, "&protocol=RSEM", end)
-      } else if (endpoint == "mRNASeq" & cancer == "BRCA") {
-        url <- paste0(base, endpoint, "?format=json&gene=brca2%2Cerbb2&cohort=",
-                      cancer, "&protocol=RSEM", end)
-      } else if (endpoint == "Clinical") {
-        url <- paste0(base, endpoint, "?format=json&cohort=",
-                      cancer, end)
-      } else {
-        url <- "Error"
-      }
-      
-      response <- GET(url)
-      parsed <- fromJSON(rawToChar(response$content))
-      as_tibble(parsed[[endpoint]])
+  firebrowse_query <- function(endpoint, cancer) {
+    base <- "http://firebrowse.org/api/v1/Samples/"
+    end <- "&page=1&page_size=3000&sort_by=cohort"
+    
+    if (endpoint == "mRNASeq" & cancer == "LUAD") {
+      url <- paste0(base, endpoint, "?format=json&gene=met%2Cerbb2&cohort=",
+                    cancer, "&protocol=RSEM", end)
+    } else if (endpoint == "mRNASeq" & cancer == "BLCA") {
+      url <- paste0(base, endpoint, "?format=json&gene=FGFR3%2Cerbb2&cohort=",
+                    cancer, "&protocol=RSEM", end)
+    } else if (endpoint == "mRNASeq" & cancer == "BRCA") {
+      url <- paste0(base, endpoint, "?format=json&gene=brca2%2Cerbb2&cohort=",
+                    cancer, "&protocol=RSEM", end)
+    } else if (endpoint == "Clinical") {
+      url <- paste0(base, endpoint, "?format=json&cohort=",
+                    cancer, end)
+    } else {
+      url <- "Error"
     }
     
+    response <- GET(url)
+    parsed <- fromJSON(rawToChar(response$content))
+    as_tibble(parsed[[endpoint]])
+  }
+  
+  cancer_data <- reactive({
     firebrowse_query(input$endpoint, input$cancer)
   })
+  
+  firebrowse_queryE <- function(endpointE, cancerE) {
+    base <- "http://firebrowse.org/api/v1/Samples/"
+    end <- "&page=1&page_size=3000&sort_by=cohort"
+    
+    if (endpointE == "mRNASeq" & cancerE == "LUAD") {
+      url <- paste0(base, endpointE, "?format=json&gene=met%2Cerbb2&cohort=",
+                    cancerE, "&protocol=RSEM", end)
+    } else if (endpointE == "mRNASeq" & cancerE == "BLCA") {
+      url <- paste0(base, endpointE, "?format=json&gene=FGFR3%2Cerbb2&cohort=",
+                    cancerE, "&protocol=RSEM", end)
+    } else if (endpointE == "mRNASeq" & cancerE == "BRCA") {
+      url <- paste0(base, endpointE, "?format=json&gene=brca2%2Cerbb2&cohort=",
+                    cancerE, "&protocol=RSEM", end)
+    } else if (endpointE == "Clinical") {
+      url <- paste0(base, endpointE, "?format=json&cohort=",
+                    cancerE, end)
+    } else {
+      url <- "Error"
+    }
+    
+    response <- GET(url)
+    parsed <- fromJSON(rawToChar(response$content))
+    as_tibble(parsed[[endpointE]])
+  }
+  
+  cancer_dataE <- reactive({
+    firebrowse_queryE(input$endpointE, input$cancerE)
+  })
+  
   observeEvent ({
     input$endpoint
     input$cancer
@@ -146,81 +176,142 @@ function(input, output, session) {
   
   #PLOTS
   output$plotExplore <- renderPlot({
-    dat <- cancer_data()
+    dat <- cancer_dataE()
+    print(dat)
     str(dat)
-    if (input$plotmRNASeq == "Density" & input$cancer == "BRCA") {
+    print(input$endpointE)
+    print(input$cancerE)
+    print(input$outcomeL)
+    if (input$plotmRNASeq == "Density" & input$cancerE == "BRCA") {
       g <- ggplot(dat, aes(x = expression_log2))
       g + geom_density(alpha = 0.5, aes(fill = gene)) +
         labs(x = "Gene Expression", y = "Density", 
              title = "Gene Expression of BRCA2 and HER2 in Breast Cancer")
-    } else if (input$plotmRNASeq == "Density" & input$cancer == "BLCA") {
+    } else if (input$plotmRNASeq == "Density" & input$cancerE == "BLCA") {
       g <- ggplot(dat, aes(x = expression_log2))
       g + geom_density(alpha = 0.5, aes(fill = gene)) +
         labs(x = "Gene Expression", y = "Density", 
              title = "Gene Expression of FGFR3 and HER2 in Bladder Cancer")
-    } else if (input$plotmRNASeq == "Density" & input$cancer == "LUAD") {
+    } else if (input$plotmRNASeq == "Density" & input$cancerE == "LUAD") {
       g <- ggplot(dat, aes(x = expression_log2))
       g + geom_density(alpha = 0.5, aes(fill = gene)) +
         labs(x = "Gene Expression", y = "Density", 
              title = "Gene Expression of MET and HER2 in Lung Cancer")
-    } else if (input$plotmRNASeq == "Box Plot" & input$cancer == "BRCA") {
+    } else if (input$plotmRNASeq == "Box Plot" & input$cancerE == "BRCA") {
       g <- ggplot(dat)
       g + geom_boxplot(aes(x = gene, y = expression_log2, fill = gene)) +
         labs(x = "Gene", y = "Gene Expression", 
              title = "Gene Expression of BRCA2 and HER2 in Breast Cancer")
-    } else if (input$plotmRNASeq == "Box Plot" & input$cancer == "BLCA") {
+    } else if (input$plotmRNASeq == "Box Plot" & input$cancerE == "BLCA") {
       g <- ggplot(dat)
       g + geom_boxplot(aes(x = gene, y = expression_log2, fill = gene)) +
         labs(x = "Gene", y = "Gene Expression", 
              title = "Gene Expression of FGFR3 and HER2 in BLadder Cancer")
-    } else {
+    } else if (input$plotmRNASeq == "Box Plot" & input$cancerE == "LUAD") {
       g <- ggplot(dat)
       g + geom_boxplot(aes(x = gene, y = expression_log2, fill = gene)) +
         labs(x = "Gene", y = "Gene Expression", 
              title = "Gene Expression of MET and HER2 in Lung Cancer")
+    } else if (input$varClinicalL == 
+               "Radiation Therapy and Targeted Molecular Therapy" &
+               input$outcomeL == "Treatments Bar Chart") {
+      g <- ggplot(dat |> 
+                    mutate(across(everything(), function(x) na_if(x, "NA"))) |>
+                    select(radiation_therapy, targeted_molecular_therapy) |>
+                    drop_na(radiation_therapy, targeted_molecular_therapy) |>
+                    pivot_longer(cols = everything(), 
+                                 names_to = "Therapy", values_to = "Received"),
+                  aes(x = Therapy, fill = Received))
+      g + geom_bar() +
+        labs(x = "Treatment Therapy", y = "Count", 
+             title = "Stacked Bar Chart of Administered Treatments for Lung Cancer") +
+        scale_x_discrete(labels = c("Radiation_Therapy" = "Radiation Therapy", 
+                                    "Targeted_Molecular_Therapy" = "Targeted Molecular Therapy"))
+      
+    } else if (input$varClinicalL == "Primary Therapy Outcome" &
+               input$outcomeL == "Outcome Bar Chart") {
+      g <- ggplot(dat |> 
+                    filter(primary_therapy_outcome_success != "NA"),
+                  aes(x = primary_therapy_outcome_success, 
+                      fill = primary_therapy_outcome_success))
+      g + geom_bar() +
+        labs(x = "Outcome", y = "Count", 
+             title = "Bar Chart of Primary Therapy Outcome for Lung Cancer") +
+        labs(fill = "Outcome") +
+        coord_flip()
+    } else {
+      dat
     }
   })
   
   #TABLES
   output$tableExplore <- renderDT ({
-    dat <- cancer_data()
+    dat <- cancer_dataE()
     
-    if (input$tableClinical == "Gender") {
-      dat_gender <- dat |>
+    if (input$tableClinical == "Gender" & input$endpointE == "Clinical") {
+      dat <- dat |>
         group_by(gender) |>
         summarize(count = n())
-      dat_gender
+    
     } else if (input$tableClinical == "Stage") {
-      dat_stage <- dat |>
+      dat <- dat |>
         rename("Stage" = "pathologic_stage") |>
         mutate(across(everything(), function(x) na_if(x, "NA"))) |>
         drop_na(Stage) |>
         group_by(Stage) |>
         summarize(count = n())
-      dat_stage
+      
     } else if (input$tableClinical == "Race") {
-      dat_race <-dat |>
+      dat <-dat |>
         mutate(across(everything(), function(x) na_if(x, "NA"))) |>
         drop_na(race) |>
         group_by(race) |>
         summarize(count = n())
       
-      dat_race
-    } else if (input$tablemRNASeq == "Summary Statistics"){
-      dat <- cancer_data()
-      dat_summary <- dat |>
-        group_by(gene) |>
-        summarize(across(expression_log2, .fns = list("Mean" = mean,
-                                                      "Median" = median,
-                                                      "Standard_Deviation" = sd,
-                                                      "Variance" = var), 
-                         .names = "{.fn}_{.col}"))
-      dat_summary
-      
     } else {
-      NULL
+      dat
     }
+    dat
+  })
+  
+  output$geneSelection <- renderUI({
+    if (input$endpointE == "mRNASeq") {
+      gene_choices <- unique(cancer_dataE()$gene)
+      selectInput("genesel", "Select Gene", choices = gene_choices, selected = NULL)
+    }
+  })
+  
+  output$statSelection <- renderUI({
+    req(input$genesel)
     
+    if (input$endpointE == "mRNASeq") {
+      selectInput("statSelection", "Select Statistic",
+                  choices = c("mean", "median", "standard deviation", "variance"))
+    }
+  })
+  
+  output$statisticOutput <- renderText({
+    req(input$genesel, input$statSelection)
+    
+    if (input$endpointE == "mRNASeq") {
+      dat <- cancer_dataE() |>
+        filter(gene == input$genesel)
+      
+      summary_stats <- summarise(dat,
+                                 expression_log2_Mean = mean(expression_log2, na.rm = TRUE),
+                                 expression_log2_Median = median(expression_log2, na.rm = TRUE),
+                                 expression_log2_Standard_Deviation = sd(expression_log2, na.rm = TRUE),
+                                 expression_log2_Variance = var(expression_log2, na.rm = TRUE))
+      
+      selected_stat <- switch(input$statSelection,
+                              "mean" = summary_stats$expression_log2_Mean,
+                              "median" = summary_stats$expression_log2_Median,
+                              "standard deviation" = summary_stats$expression_log2_Standard_Deviation,
+                              "variance" = summary_stats$expression_log2_Variance)
+      
+      paste("The", input$statSelection, "of the gene expression of",
+            input$genesel, "is", round(selected_stat, 2))
+    }
   })
   
   output$cancerTable <- renderDT({

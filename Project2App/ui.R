@@ -69,19 +69,19 @@ fluidPage(
       "Data Exploration",
       sidebarLayout(
         sidebarPanel(
-          selectInput("endpoint", "Select Endpoint", 
-                      choices = c("mRNASeq", "Clinical")),
-          selectInput("cancer", "Select Cancer Type",
-                      choices = c("BRCA", "BLCA", "LUAD")),
+          selectInput("endpointE", "Select Endpoint", 
+                      choices = c("mRNASeq", "Clinical"), selected = "mRNASeq"),
+          selectInput("cancerE", "Select Cancer Type",
+                      choices = c("BRCA", "BLCA", "LUAD"), selected = "BRCA"),
           br(),
           conditionalPanel(
-            condition = "input.endpoint == 'mRNASeq'",
+            condition = "input.endpointE == 'mRNASeq'",
             selectInput("plotmRNASeq", "Select a Plot Type",
                         choices = c("Density", "Box Plot"))
           ),
           conditionalPanel(
-            condition = "input.endpoint == 'Clinical' & 
-            input.cancer == 'BRCA'",
+            condition = "input.endpointE == 'Clinical' & 
+            input.cancerE == 'BRCA'",
             selectInput("plotClinicalBR", "Select a Plot",
                         choices = c("Treatment Bar Chart", 
                                     "Receptor Status Bar Chart", 
@@ -89,44 +89,60 @@ fluidPage(
                                     "Status by Age Bar Chart"))
           ),
           conditionalPanel(
-            condition = "input.endpoint == 'Clinical' & 
-            input.cancer == 'BRCA' && input.plotClinicalBR == 
+            condition = "input.endpointE == 'Clinical' & 
+            input.cancerE == 'BRCA' && input.plotClinicalBR == 
             'Status by Age Bar Chart'",
             radioButtons("plotType", "Select a Plot Type", choices = 
                            c("Stacked Bar Chart", "Faceted Bar Chart"),
                          selected = "")
           ),
           conditionalPanel(
-            condition = "input.endpoint == 'Clinical' & input.cancer == 'BLCA'",
+            condition = "input.endpointE == 'Clinical' & input.cancerE == 'BLCA'",
             selectInput("plotClinicalBLCA", "Select a Plot",
                         choices = c("Outcome Bar Chart", 
                                     "Stage by Age Bar Chart"))
           ),
           conditionalPanel(
-            condition = "input.endpoint == 'Clinical' & input.cancer == 'LUAD'",
-            selectInput("plotClinicalLUAD", "Select a Plot",
-                        choices = c("Treatments Bar Chart", 
-                                    "Outcome Horizontal Bar Chart"))
-          ),
+            condition = "input.endpointE == 'Clinical' && input.cancerE == 'LUAD'",
+            radioButtons("varClinicalL", "Select a variable(s)",
+                         choices = c("Radiation Therapy and Targeted Molecular Therapy", 
+                                     "Primary Therapy Outcome"), selected = ""),
+            conditionalPanel(
+              condition = "input.varClinicalL == 'Radiation Therapy and Targeted Molecular Therapy'",
+              checkboxInput("therL", "Treatments Bar Chart", value = FALSE)),
+            
+            conditionalPanel(
+              condition = "input.varClinicalL == 'Primary Therapy Outcome'",
+              checkboxInput("outcomeL", "Outcome Bar Chart", value = FALSE))),
           br(),
-          checkboxInput("tableOption", "Would you like to select a table?",
-                        value = FALSE),
           conditionalPanel(
-            condition = "input.tableOption & input.endpoint == 'mRNASeq'",
-            selectInput("tableMRNASeq", "Select a Table",
-                        choices = c("Summary Statistics"))
+            condition = "input.endpointE == 'Clinical'",
+            selectInput("tableClinical", "Select a Contingency Table",
+                        choices = c("Gender", "Race", "Stage"))),
+          br(),
+          conditionalPanel(
+            condition = "input.endpointE == 'mRNASeq'",
+            checkboxInput("summary", "Select Summary Statistics?")
           ),
           conditionalPanel(
-            condition = "input.tableOption & input.endpoint == 'Clinical'",
-            selectInput("tableClinical", "Select a Contingency Table",
-                        choices = c("Gender", "Race", "Stage"))
-          )
+            condition = "input.summary == true",
+            uiOutput("geneSelection")
+          ),
+          conditionalPanel(
+            condition = "input.genesel != null & input.genesel != ''",
+            uiOutput("statSelection")
+          ),
+          
+          textOutput("statisticOutput")
         ),
         mainPanel(
+          
           plotOutput("plotExplore"),
+          textOutput("statisticOutput"),
           DTOutput("tableExplore")
         )
       )
     )
   )
 )
+

@@ -136,7 +136,6 @@ cancer_data1 |>
   summarize(count = n())
 ```
 
-
 # test
 
 ```{r}
@@ -150,7 +149,6 @@ plot_ly(cancer_data1 |> drop_na(Stage_Condensed) |> group_by(Stage_Condensed) |>
          
 
 ```
-
 
 ## Receptor status
 
@@ -166,7 +164,7 @@ cancer_data1 |>
   pivot_wider(names_from = Status, values_from = count, values_fill = 0)
 ```
 
-# test
+# heatmap
 
 ```{r}
 
@@ -183,12 +181,6 @@ status_table2
 
 ggplot(status_table2, aes(Var1, Var2, fill = Freq)) + geom_tile()
 ```
-# test 2
-
-```{r}
-
-```
-
 
 ## treatment
 
@@ -230,6 +222,24 @@ g + geom_bar() +
                                "Equivocal" = "cornflowerblue"
                                ))
 ```
+
+
+# above plot faceted
+
+```{r}
+g <- ggplot(cancer_data1_long2, aes(x = Receptor, fill = Status))
+g + geom_bar(position = "dodge") +
+  labs(x = "Receptor", y = "Count", title = "Stacked Bar Chart of Receptor Status") +
+  scale_x_discrete(labels = c("Estrogen_Receptor_Status" = "Estrogen Receptor", 
+  "Progesterone_Receptor_Status" = "Progesterone Receptor", 
+  "Her2_Receptor_Status" = "Her2 Receptor")) +
+  scale_fill_manual(values = c("Positive" = "pink",
+                               "Negative" = "skyblue",
+                               "Indeterminate" = "purple",
+                               "Equivocal" = "cornflowerblue"
+                               ))
+```
+
 
 ## Positive Receptor Status by Age
 
@@ -346,8 +356,6 @@ cancer_data2 |>
                    .names = "{.fn}_{.col}"))
 ```
 
-
-
 # BLCA Clinical query using Firebrowse
 
 ```{r}
@@ -431,7 +439,7 @@ cancer_data3
 ## check missing values again
 
 ```{r}
-colSums(is.na(cancer_data3))
+#colSums(is.na(cancer_data3))
 ```
 
 # Contingency tables
@@ -569,8 +577,6 @@ cancer_data4 |>
                    .names = "{.fn}_{.col}"))
 ```
 
-
-
 # LUAD Clinical query using Firebrowse
 
 ```{r}
@@ -688,6 +694,9 @@ g + geom_bar() +
   scale_x_discrete(labels = c("Radiation_Therapy" = "Radiation Therapy", 
   "Targeted_Molecular_Therapy" = "Targeted Molecular Therapy"))
 ```
+
+
+
 
 # Therapy Outcome
 
@@ -834,11 +843,6 @@ firebrowse_query <- function(endpoint, cancer) {
 firebrowse_query(mRNASeq, LUAD)
 ```
 
-
-
-
-
-
 # cBioPortal
 
 ```{r}
@@ -865,9 +869,6 @@ cancer_data
 ```{r}
 colSums(is.na(cancer_data))
 ```
-
-
-
 
 # Updatated function with ciobportal
 
@@ -926,21 +927,15 @@ api_query <- function(endpoint, cancer) {
 api_query(cbioClinical, BRCA)
 ```
 
-
 ## test again
 
 ```{r}
 api_query(mRNASeq, BRCA)
 ```
 
-
-
 # Bubble Plot 1
 
-b <- ggplot(df, aes(x = wt, y = mpg))
-b + geom_point(aes(color = cyl, size = qsec), alpha = 0.5) +
-  scale_fill_manual(values = c("#00AFBB", "#E7B800", "#FC4E07")) +
-  scale_size(range = c(0.5, 12))  # Adjust the range of points size
+b \<- ggplot(df, aes(x = wt, y = mpg)) b + geom_point(aes(color = cyl, size = qsec), alpha = 0.5) + scale_fill_manual(values = c("#00AFBB", "#E7B800", "#FC4E07")) + scale_size(range = c(0.5, 12)) \# Adjust the range of points size
 
 ```{r}
 
@@ -961,7 +956,6 @@ b + geom_point(aes(color = CANCER_TYPE_DETAILED,
 
 
 ```
-
 
 # Bubble Plot 2
 
@@ -984,4 +978,3 @@ b + geom_point(aes(color = CANCER_TYPE_DETAILED,
        size = " Microsatellite Instability Score")
   
 ```
-
