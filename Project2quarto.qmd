@@ -140,21 +140,6 @@ cancer_data1 |>
 # test
 
 ```{r}
-#| error: true
-ggplot(cancer_data1 |> drop_na(Race) |> group_by(Race) |> 
-          summarize(count = n()), aes(x = "Race", fill = Category, y = count)) +
-  geom_bar(width = 1, stat = "identity") +
-  coord_polar("y", start = 0) +
-  theme_void() +
-  theme(legend.position = "bottom") +
-  labs(title = "Your Title Here", fill = "Legend Title", y = "Count")
-```
-
-
-
-# test
-
-```{r}
 library(plotly)
 # Plotly pie chart
 plot_ly(cancer_data1 |> drop_na(Stage_Condensed) |> group_by(Stage_Condensed) |> 
@@ -180,6 +165,30 @@ cancer_data1 |>
   summarize(count = n()) |>
   pivot_wider(names_from = Status, values_from = count, values_fill = 0)
 ```
+
+# test
+
+```{r}
+
+cancer_test <- cancer_data1 |>
+  select(Estrogen_Receptor_Status, Progesterone_Receptor_Status, 
+         Her2_Receptor_Status) |>
+  pivot_longer(cols = everything(), 
+               names_to = "Receptor", values_to = "Status") |>
+  drop_na(Receptor, Status)
+status_table <- table(cancer_test$Receptor, cancer_test$Status)
+status_table
+status_table2 <- as.data.frame(status_table)
+status_table2
+
+ggplot(status_table2, aes(Var1, Var2, fill = Freq)) + geom_tile()
+```
+# test 2
+
+```{r}
+
+```
+
 
 ## treatment
 
@@ -325,6 +334,20 @@ g + geom_violin(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
        title = "Expression of BRCA2 and HER2 in Breast Cancer")
 ```
 
+# center and spread
+
+```{r}
+cancer_data2 |>
+  group_by(Gene) |>
+  summarize(across(Gene_Expression, .fns = list("Mean" = mean,
+                                     "Median" = median,
+                                     "Standard_Deviation" = sd,
+                                     "Variance" = var), 
+                   .names = "{.fn}_{.col}"))
+```
+
+
+
 # BLCA Clinical query using Firebrowse
 
 ```{r}
@@ -455,7 +478,7 @@ cancer_data3_long1
 g <- ggplot(cancer_data3_long1, aes(x = Therapy, fill = Outcome))
 g + geom_bar() +
   labs(x = "Therapy Type", y = "Count", 
-       title = "Stacked Bar Chart of Outcome of Treatment Types for Lung Cancer") +
+       title = "Stacked Bar Chart of Outcome of Treatment Types for Bladder Cancer") +
   scale_x_discrete(labels = c("Primary_Therapy_Outcome" = "Primary",
                               "Additional_Treatment_Outcome" = "Additional"))
 ```
@@ -492,6 +515,7 @@ cancer_data4 <- as_tibble(parsed4$mRNASeq) |>
          "Gene" = gene, TCGA_Participant_Barcode = tcga_participant_barcode) |>
   mutate(Gene = ifelse(Gene == "ERBB2", "HER2", Gene)) 
 cancer_data4
+#colSums(is.na(cancer_data4))
 ```
 
 # center and spread
@@ -532,6 +556,20 @@ g + geom_violin(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
   labs(x = "Gene", y = "Gene Expression", 
        title = "Expression of FGFR3 and HER2 in Bladder Cancer")
 ```
+
+## center and spread
+
+```{r}
+cancer_data4 |>
+  group_by(Gene) |>
+  summarize(across(Gene_Expression, .fns = list("Mean" = mean,
+                                     "Median" = median,
+                                     "Standard_Deviation" = sd,
+                                     "Variance" = var), 
+                   .names = "{.fn}_{.col}"))
+```
+
+
 
 # LUAD Clinical query using Firebrowse
 

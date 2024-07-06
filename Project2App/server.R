@@ -39,6 +39,7 @@ function(input, output, session) {
   }, {
     updateCheckboxInput(session, "subsetColumns", value = FALSE)
     updateCheckboxInput(session, "subsetRows", value = FALSE)
+    updateCheckboxInput(session, "tableOption", value = FALSE)
   })
   
   observe({
@@ -141,6 +142,85 @@ function(input, output, session) {
       }
     }
     data
+  }) 
+  
+  #PLOTS
+  output$plotExplore <- renderPlot({
+    dat <- cancer_data()
+    str(dat)
+    if (input$plotmRNASeq == "Density" & input$cancer == "BRCA") {
+      g <- ggplot(dat, aes(x = expression_log2))
+      g + geom_density(alpha = 0.5, aes(fill = gene)) +
+        labs(x = "Gene Expression", y = "Density", 
+             title = "Gene Expression of BRCA2 and HER2 in Breast Cancer")
+    } else if (input$plotmRNASeq == "Density" & input$cancer == "BLCA") {
+      g <- ggplot(dat, aes(x = expression_log2))
+      g + geom_density(alpha = 0.5, aes(fill = gene)) +
+        labs(x = "Gene Expression", y = "Density", 
+             title = "Gene Expression of FGFR3 and HER2 in Bladder Cancer")
+    } else if (input$plotmRNASeq == "Density" & input$cancer == "LUAD") {
+      g <- ggplot(dat, aes(x = expression_log2))
+      g + geom_density(alpha = 0.5, aes(fill = gene)) +
+        labs(x = "Gene Expression", y = "Density", 
+             title = "Gene Expression of MET and HER2 in Lung Cancer")
+    } else if (input$plotmRNASeq == "Box Plot" & input$cancer == "BRCA") {
+      g <- ggplot(dat)
+      g + geom_boxplot(aes(x = gene, y = expression_log2, fill = gene)) +
+        labs(x = "Gene", y = "Gene Expression", 
+             title = "Gene Expression of BRCA2 and HER2 in Breast Cancer")
+    } else if (input$plotmRNASeq == "Box Plot" & input$cancer == "BLCA") {
+      g <- ggplot(dat)
+      g + geom_boxplot(aes(x = gene, y = expression_log2, fill = gene)) +
+        labs(x = "Gene", y = "Gene Expression", 
+             title = "Gene Expression of FGFR3 and HER2 in BLadder Cancer")
+    } else {
+      g <- ggplot(dat)
+      g + geom_boxplot(aes(x = gene, y = expression_log2, fill = gene)) +
+        labs(x = "Gene", y = "Gene Expression", 
+             title = "Gene Expression of MET and HER2 in Lung Cancer")
+    }
+  })
+  
+  #TABLES
+  output$tableExplore <- renderDT ({
+    dat <- cancer_data()
+    
+    if (input$tableClinical == "Gender") {
+      dat_gender <- dat |>
+        group_by(gender) |>
+        summarize(count = n())
+      dat_gender
+    } else if (input$tableClinical == "Stage") {
+      dat_stage <- dat |>
+        rename("Stage" = "pathologic_stage") |>
+        mutate(across(everything(), function(x) na_if(x, "NA"))) |>
+        drop_na(Stage) |>
+        group_by(Stage) |>
+        summarize(count = n())
+      dat_stage
+    } else if (input$tableClinical == "Race") {
+      dat_race <-dat |>
+        mutate(across(everything(), function(x) na_if(x, "NA"))) |>
+        drop_na(race) |>
+        group_by(race) |>
+        summarize(count = n())
+      
+      dat_race
+    } else if (input$tablemRNASeq == "Summary Statistics"){
+      dat <- cancer_data()
+      dat_summary <- dat |>
+        group_by(gene) |>
+        summarize(across(expression_log2, .fns = list("Mean" = mean,
+                                                      "Median" = median,
+                                                      "Standard_Deviation" = sd,
+                                                      "Variance" = var), 
+                         .names = "{.fn}_{.col}"))
+      dat_summary
+      
+    } else {
+      NULL
+    }
+    
   })
   
   output$cancerTable <- renderDT({

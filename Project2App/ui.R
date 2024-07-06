@@ -30,7 +30,7 @@ fluidPage(
               depending on the cancer type selected. The cancer type 
               options for the query include breast, lung and bladder 
               cancer. Selecting an endpoint and cancer type will produce 
-              a data table which can subsequently subsetted and saved as 
+              a data table which can subsequently be subsetted and saved as 
               a CSV file.")
     ),
     tabPanel(
@@ -38,10 +38,10 @@ fluidPage(
       sidebarLayout(
         sidebarPanel(
           selectInput("endpoint", "Select Endpoint", 
-                      choices = list("mRNASeq", "Clinical")),
+                      choices = c("mRNASeq", "Clinical")),
           br(),
           selectInput("cancer", "Select Cancer Type",
-                      choices = list("BRCA", "BLCA", "LUAD")),
+                      choices = c("BRCA", "BLCA", "LUAD")),
           checkboxInput("subsetColumns", "Do you want to subset columns?",
                         value = FALSE),
           conditionalPanel(
@@ -69,25 +69,62 @@ fluidPage(
       "Data Exploration",
       sidebarLayout(
         sidebarPanel(
-          selectInput("endpoint_explore", "Select Endpoint", 
-                      choices = list("mRNASeq", "Clinical")),
-          selectInput("cancer_explore", "Select Cancer Type",
-                      choices = list("BRCA", "BLCA", "LUAD")),
+          selectInput("endpoint", "Select Endpoint", 
+                      choices = c("mRNASeq", "Clinical")),
+          selectInput("cancer", "Select Cancer Type",
+                      choices = c("BRCA", "BLCA", "LUAD")),
           br(),
-          selectInput("type", "Select data output type", 
-                      choices = list("Plot", "Table")),
           conditionalPanel(
-            condition = "input.type == 'Plot'",
-            selectInput("plots", "Select a Plot Type",
-                        choices = c("Density Plot",
-                                    "Box Plot", 
-                                    "Violin Plot",
-                                    "Bar Chart",
-                                    "Pie Chart"))
+            condition = "input.endpoint == 'mRNASeq'",
+            selectInput("plotmRNASeq", "Select a Plot Type",
+                        choices = c("Density", "Box Plot"))
+          ),
+          conditionalPanel(
+            condition = "input.endpoint == 'Clinical' & 
+            input.cancer == 'BRCA'",
+            selectInput("plotClinicalBR", "Select a Plot",
+                        choices = c("Treatment Bar Chart", 
+                                    "Receptor Status Bar Chart", 
+                                    "Receptor Status Heat Map",
+                                    "Status by Age Bar Chart"))
+          ),
+          conditionalPanel(
+            condition = "input.endpoint == 'Clinical' & 
+            input.cancer == 'BRCA' && input.plotClinicalBR == 
+            'Status by Age Bar Chart'",
+            radioButtons("plotType", "Select a Plot Type", choices = 
+                           c("Stacked Bar Chart", "Faceted Bar Chart"),
+                         selected = "")
+          ),
+          conditionalPanel(
+            condition = "input.endpoint == 'Clinical' & input.cancer == 'BLCA'",
+            selectInput("plotClinicalBLCA", "Select a Plot",
+                        choices = c("Outcome Bar Chart", 
+                                    "Stage by Age Bar Chart"))
+          ),
+          conditionalPanel(
+            condition = "input.endpoint == 'Clinical' & input.cancer == 'LUAD'",
+            selectInput("plotClinicalLUAD", "Select a Plot",
+                        choices = c("Treatments Bar Chart", 
+                                    "Outcome Horizontal Bar Chart"))
+          ),
+          br(),
+          checkboxInput("tableOption", "Would you like to select a table?",
+                        value = FALSE),
+          conditionalPanel(
+            condition = "input.tableOption & input.endpoint == 'mRNASeq'",
+            selectInput("tableMRNASeq", "Select a Table",
+                        choices = c("Summary Statistics"))
+          ),
+          conditionalPanel(
+            condition = "input.tableOption & input.endpoint == 'Clinical'",
+            selectInput("tableClinical", "Select a Contingency Table",
+                        choices = c("Gender", "Race", "Stage"))
           )
         ),
         mainPanel(
-          DTOutput("distPlot")
+          plotOutput("plotExplore"),
+          DTOutput("tableExplore")
         )
       )
     )
