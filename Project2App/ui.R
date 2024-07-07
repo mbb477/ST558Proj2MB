@@ -31,7 +31,8 @@ fluidPage(
               options for the query include breast, lung and bladder 
               cancer. Selecting an endpoint and cancer type will produce 
               a data table which can subsequently be subsetted and saved as 
-              a CSV file.")
+              a CSV file."),
+      tags$img(src = "mRNA.webp")
     ),
     tabPanel(
       "Data Download",
@@ -90,7 +91,7 @@ fluidPage(
           ),
           conditionalPanel(
             condition = "input.endpointE == 'Clinical' & 
-            input.cancerE == 'BRCA' && input.plotClinicalBR == 
+            input.cancerE == 'BRCA' & input.plotClinicalBR == 
             'Status by Age Bar Chart'",
             radioButtons("plotType", "Select a Plot Type", choices = 
                            c("Stacked Bar Chart", "Faceted Bar Chart"),
@@ -103,12 +104,13 @@ fluidPage(
                                     "Stage by Age Bar Chart"))
           ),
           conditionalPanel(
-            condition = "input.endpointE == 'Clinical' && input.cancerE == 'LUAD'",
+            condition = "input.endpointE == 'Clinical' & input.cancerE == 'LUAD'",
             radioButtons("varClinicalL", "Select a variable(s)",
                          choices = c("Radiation Therapy and Targeted Molecular Therapy", 
                                      "Primary Therapy Outcome"), selected = ""),
             conditionalPanel(
-              condition = "input.varClinicalL == 'Radiation Therapy and Targeted Molecular Therapy'",
+              condition = "input.varClinicalL == 
+              'Radiation Therapy and Targeted Molecular Therapy'",
               checkboxInput("therL", "Treatments Bar Chart", value = FALSE)),
             
             conditionalPanel(

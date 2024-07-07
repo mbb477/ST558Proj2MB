@@ -174,6 +174,13 @@ function(input, output, session) {
     data
   }) 
   
+  observeEvent ({
+    input$varClinicalL
+  }, {
+    updateCheckboxInput(session, "therL", value = FALSE)
+    updateCheckboxInput(session, "outcomeL", value = FALSE)
+  })
+  
   #PLOTS
   output$plotExplore <- renderPlot({
     dat <- cancer_dataE()
@@ -182,6 +189,8 @@ function(input, output, session) {
     print(input$endpointE)
     print(input$cancerE)
     print(input$outcomeL)
+    print(input$therL)
+    print(input$varClinicalL)
     if (input$plotmRNASeq == "Density" & input$cancerE == "BRCA") {
       g <- ggplot(dat, aes(x = expression_log2))
       g + geom_density(alpha = 0.5, aes(fill = gene)) +
@@ -214,8 +223,8 @@ function(input, output, session) {
              title = "Gene Expression of MET and HER2 in Lung Cancer")
     } else if (input$varClinicalL == 
                "Radiation Therapy and Targeted Molecular Therapy" &
-               input$outcomeL == "Treatments Bar Chart") {
-      g <- ggplot(dat |> 
+               input$therL == "Treatments Bar Chart") {
+      g <- ggplot(dat |>
                     mutate(across(everything(), function(x) na_if(x, "NA"))) |>
                     select(radiation_therapy, targeted_molecular_therapy) |>
                     drop_na(radiation_therapy, targeted_molecular_therapy) |>
@@ -226,12 +235,21 @@ function(input, output, session) {
         labs(x = "Treatment Therapy", y = "Count", 
              title = "Stacked Bar Chart of Administered Treatments for Lung Cancer") +
         scale_x_discrete(labels = c("Radiation_Therapy" = "Radiation Therapy", 
-                                    "Targeted_Molecular_Therapy" = "Targeted Molecular Therapy"))
+                                    "Targeted_Molecular_Therapy" = 
+                                      "Targeted Molecular Therapy"))
       
     } else if (input$varClinicalL == "Primary Therapy Outcome" &
                input$outcomeL == "Outcome Bar Chart") {
       g <- ggplot(dat |> 
-                    filter(primary_therapy_outcome_success != "NA"),
+                    mutate(across(everything(), function(x) na_if(x, "NA"))) |>
+                    drop_na(primary_therapy_outcome_success) |>
+                    mutate(factor(primary_therapy_outcome_success, 
+                                  levels = c("complete remission/response",
+                                             "partial remission/response",
+                                             "stable disease", "progressive disease"), 
+                                  labels = c("Complete disease Remission/Response",
+                                             "Partial Remission/Response",
+                                             "Stable Disease", "Progressive Disease"))),
                   aes(x = primary_therapy_outcome_success, 
                       fill = primary_therapy_outcome_success))
       g + geom_bar() +
@@ -239,10 +257,12 @@ function(input, output, session) {
              title = "Bar Chart of Primary Therapy Outcome for Lung Cancer") +
         labs(fill = "Outcome") +
         coord_flip()
+      
     } else {
       dat
     }
   })
+  
   
   #TABLES
   output$tableExplore <- renderDT ({
@@ -252,7 +272,7 @@ function(input, output, session) {
       dat <- dat |>
         group_by(gender) |>
         summarize(count = n())
-    
+      
     } else if (input$tableClinical == "Stage") {
       dat <- dat |>
         rename("Stage" = "pathologic_stage") |>
@@ -272,6 +292,14 @@ function(input, output, session) {
       dat
     }
     dat
+  })
+  
+  observeEvent ({
+    input$endpointE
+    input$cancerE
+  }, {
+    updateCheckboxInput(session, "summary", value = FALSE)
+    updateSelectInput(session, "statSelection", choices = character(0))
   })
   
   output$geneSelection <- renderUI({
