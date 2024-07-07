@@ -254,7 +254,7 @@ cancer_data1_long3 <- cancer_data1 |>
   group_by(Age_Grouping) |>
   mutate(total_count = n()) |>
   group_by(Age_Grouping, Receptor_Type) |>
-  summarize(count = n(), total_count = dplyr::first(total_count), .groups = "drop") |>
+  summarize(count = n(), total_count = first(total_count), .groups = "drop") |>
   mutate(Proportion = count /total_count)
 
 cancer_data1_long3
@@ -391,6 +391,9 @@ cancer_data3 <- as_tibble(parsed3$Clinical) |>
                          ifelse(Diagnosis_Age > 64, "Old", NA))))
            
 cancer_data3
+unique_values <- unique(cancer_data3$Additional_Treatment_Outcome)
+unique_values
+
 ```
 
 ## check for missing values
@@ -426,7 +429,7 @@ cancer_data3 <- cancer_data3 |>
                              "partial remission/response", 
                              "stable disease", "progressive disease", NA),
                   labels = 
-                  c("Complete Remission/Response", "Partial Remission/Response", 
+                  c("Complete Remission/Response", "Partial Remi ssion/Response", 
                     "Stable Disease", "Progressive Disease", "NA"), 
                   exclude = NULL),
          Age_Grouping = factor(Age_Grouping, levels = c("Young", "Middle Age",
@@ -434,6 +437,9 @@ cancer_data3 <- cancer_data3 |>
          )
  
 cancer_data3
+#unique_values <- unique(cancer_data3$Additional_Treatment_Outcome)
+#unique_values
+
 ```
 
 ## check missing values again
@@ -800,9 +806,8 @@ firebrowse_query <- function(endpoint, cancer) {
 
 ```{r}
 # Testing the function
-firebrowse_query(mRNASeq, LUAD)
-firebrowse_query(Clinical, BLCA)
 
+firebrowse_query(Clinical, LUAD)
 ```
 
 ## add parsing steps
@@ -840,8 +845,38 @@ firebrowse_query <- function(endpoint, cancer) {
 ## Test
 
 ```{r}
-firebrowse_query(mRNASeq, LUAD)
+dat <- firebrowse_query(Clinical, LUAD)
+dat
 ```
+
+
+#test graph
+
+```{r}
+g <- ggplot(dat |> 
+              mutate(across(everything(), function(x) na_if(x, "NA"))) |>
+              drop_na(primary_therapy_outcome_success) |>
+              mutate(factor(primary_therapy_outcome_success, 
+                            levels = c("complete remission/response",
+                                       "partial remission/response",
+                                       "stable disease", "progressive disease"), 
+                            labels = c("Complete disease Remission/Response",
+                                       "Partial Remission/Response",
+                                       "Stable Disease", "Progressive Disease"))),
+            aes(x = primary_therapy_outcome_success, 
+                fill = primary_therapy_outcome_success))
+g + geom_bar() +
+  labs(x = "Outcome", y = "Count", 
+       title = "Bar Chart of Primary Therapy Outcome for Lung Cancer") +
+  labs(fill = "Outcome") +
+  coord_flip()
+```
+
+
+
+
+
+
 
 # cBioPortal
 
@@ -924,7 +959,7 @@ api_query <- function(endpoint, cancer) {
 ## test funtion
 
 ```{r}
-api_query(cbioClinical, BRCA)
+cancer_data <- api_query(cbioClinical, BRCA)
 ```
 
 ## test again
@@ -935,7 +970,6 @@ api_query(mRNASeq, BRCA)
 
 # Bubble Plot 1
 
-b \<- ggplot(df, aes(x = wt, y = mpg)) b + geom_point(aes(color = cyl, size = qsec), alpha = 0.5) + scale_fill_manual(values = c("#00AFBB", "#E7B800", "#FC4E07")) + scale_size(range = c(0.5, 12)) \# Adjust the range of points size
 
 ```{r}
 

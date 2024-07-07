@@ -80,32 +80,35 @@ fluidPage(
             selectInput("plotmRNASeq", "Select a Plot Type",
                         choices = c("Density", "Box Plot"))
           ),
+          br(),
           conditionalPanel(
-            condition = "input.endpointE == 'Clinical' & 
-            input.cancerE == 'BRCA'",
-            selectInput("plotClinicalBR", "Select a Plot",
-                        choices = c("Treatment Bar Chart", 
-                                    "Receptor Status Bar Chart", 
-                                    "Receptor Status Heat Map",
-                                    "Status by Age Bar Chart"))
-          ),
-          conditionalPanel(
-            condition = "input.endpointE == 'Clinical' & 
-            input.cancerE == 'BRCA' & input.plotClinicalBR == 
-            'Status by Age Bar Chart'",
-            radioButtons("plotType", "Select a Plot Type", choices = 
-                           c("Stacked Bar Chart", "Faceted Bar Chart"),
-                         selected = "")
-          ),
-          conditionalPanel(
-            condition = "input.endpointE == 'Clinical' & input.cancerE == 'BLCA'",
-            selectInput("plotClinicalBLCA", "Select a Plot",
-                        choices = c("Outcome Bar Chart", 
-                                    "Stage by Age Bar Chart"))
-          ),
+            condition = "input.endpointE == 'Clinical' & input.cancerE == 'BRCA'",
+            radioButtons(
+              "varClinicalBR", 
+              "Select a variable(s) for Plotting",
+              choices = c(
+                "HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status", 
+                "Age, Positive Receptor Status"), selected = ""),
+            conditionalPanel(
+              condition = "input.varClinicalBR == 'Age, Positive Receptor Status'",
+              checkboxInput("positiveBR", "Positive Receptor Status by Age Chart", 
+                value = FALSE)),
+            conditionalPanel(
+              condition = 
+                "input.varClinicalBR == 'HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status'",
+              selectInput(
+                "statusBR", 
+                "Select a plot option",
+                choices = c("Heatmap", "Bar Chart")),
+              conditionalPanel(
+                condition = "input.statusBR == 'Bar Chart'",
+                radioButtons("statusPlotsBR", "Select the type of Bar Chart",
+                             choices = c("Stacked", "Faceted"), selected = "")))
+            ),
+          br(),
           conditionalPanel(
             condition = "input.endpointE == 'Clinical' & input.cancerE == 'LUAD'",
-            radioButtons("varClinicalL", "Select a variable(s)",
+            radioButtons("varClinicalL", "Select a variable(s) for Plotting",
                          choices = c("Radiation Therapy and Targeted Molecular Therapy", 
                                      "Primary Therapy Outcome"), selected = ""),
             conditionalPanel(
@@ -118,20 +121,37 @@ fluidPage(
               checkboxInput("outcomeL", "Outcome Bar Chart", value = FALSE))),
           br(),
           conditionalPanel(
+            condition = "input.endpointE == 'Clinical' & input.cancerE == 'BLCA'",
+            radioButtons("varClinicalBL", "Select a variable(s) for Plotting",
+                         choices = c("Age, Stage", 
+                                     "Primary Therapy Outcome, Additional Therapy Outcome"),
+                         selected = ""),
+            conditionalPanel(
+              condition = "input.varClinicalBL == 
+              'Age, Stage'",
+              checkboxInput("stageBL", "Age vs. Stage Bar Chart", value = FALSE)),
+            
+            conditionalPanel(
+              condition = "input.varClinicalBL == 
+              'Primary Therapy Outcome, Additional Therapy Outcome'",
+              checkboxInput("outcomeBL", "Outcome by Therapy Bar Chart", value = FALSE))),
+          br(),
+          conditionalPanel(
             condition = "input.endpointE == 'Clinical'",
             selectInput("tableClinical", "Select a Contingency Table",
                         choices = c("Gender", "Race", "Stage"))),
           br(),
           conditionalPanel(
             condition = "input.endpointE == 'mRNASeq'",
-            checkboxInput("summary", "Select Summary Statistics?")
+            checkboxInput("summary", "Select Gene and Summary Statistics?")
           ),
           conditionalPanel(
             condition = "input.summary == true",
             uiOutput("geneSelection")
           ),
           conditionalPanel(
-            condition = "input.genesel != null & input.genesel != ''",
+            condition = "input.endpointE == 'mRNASeq' & input.genesel != null & 
+            input.summary",
             uiOutput("statSelection")
           ),
           

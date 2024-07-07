@@ -175,11 +175,39 @@ function(input, output, session) {
   }) 
   
   observeEvent ({
+
+    input$EndpointE
+  }, {
+    updateSelectInput(session, "plotmRNASeq", selected = character(0))
+   
+  })
+  
+  observeEvent ({
     input$varClinicalL
+    input$cancerE
   }, {
     updateCheckboxInput(session, "therL", value = FALSE)
     updateCheckboxInput(session, "outcomeL", value = FALSE)
+    
   })
+  
+  observeEvent ({
+    input$cancerE
+    input$varClinicalBL
+  }, {
+    updateCheckboxInput(session, "outcomeBL", value = FALSE)
+    updateCheckboxInput(session, "stageBL", value = FALSE)
+    
+  })
+  
+  observeEvent ({
+    input$cancerE
+  }, {
+    updateRadioButtons(session, "varClinicalL", selected = character(0))
+    updateRadioButtons(session, "varClinicalBL", selected = character(0))
+    
+  })
+  
   
   #PLOTS
   output$plotExplore <- renderPlot({
@@ -191,36 +219,41 @@ function(input, output, session) {
     print(input$outcomeL)
     print(input$therL)
     print(input$varClinicalL)
+    print(input$varClinicalBL)
+    print(input$outcomeBL)
+    print(input$stageBL)
+    print(input$plotmRNASeq)
+  
     if (input$plotmRNASeq == "Density" & input$cancerE == "BRCA") {
       g <- ggplot(dat, aes(x = expression_log2))
       g + geom_density(alpha = 0.5, aes(fill = gene)) +
-        labs(x = "Gene Expression", y = "Density", 
-             title = "Gene Expression of BRCA2 and HER2 in Breast Cancer")
+        labs(x = "Gene Expression", y = "Density", fill = "Gene", 
+             title = "Gene Expression of BRCA2 and ERBB2 in Breast Cancer")
     } else if (input$plotmRNASeq == "Density" & input$cancerE == "BLCA") {
       g <- ggplot(dat, aes(x = expression_log2))
       g + geom_density(alpha = 0.5, aes(fill = gene)) +
-        labs(x = "Gene Expression", y = "Density", 
-             title = "Gene Expression of FGFR3 and HER2 in Bladder Cancer")
+        labs(x = "Gene Expression", y = "Density", "Gene",
+             title = "Gene Expression of FGFR3 and ERBB2 in Bladder Cancer")
     } else if (input$plotmRNASeq == "Density" & input$cancerE == "LUAD") {
       g <- ggplot(dat, aes(x = expression_log2))
       g + geom_density(alpha = 0.5, aes(fill = gene)) +
-        labs(x = "Gene Expression", y = "Density", 
-             title = "Gene Expression of MET and HER2 in Lung Cancer")
+        labs(x = "Gene Expression", y = "Density", "Gene",
+             title = "Gene Expression of MET and ERBB2 in Lung Cancer")
     } else if (input$plotmRNASeq == "Box Plot" & input$cancerE == "BRCA") {
       g <- ggplot(dat)
       g + geom_boxplot(aes(x = gene, y = expression_log2, fill = gene)) +
-        labs(x = "Gene", y = "Gene Expression", 
-             title = "Gene Expression of BRCA2 and HER2 in Breast Cancer")
+        labs(x = "Gene", y = "Gene Expression", "Gene",
+             title = "Gene Expression of BRCA2 and ERBB2 in Breast Cancer")
     } else if (input$plotmRNASeq == "Box Plot" & input$cancerE == "BLCA") {
       g <- ggplot(dat)
       g + geom_boxplot(aes(x = gene, y = expression_log2, fill = gene)) +
-        labs(x = "Gene", y = "Gene Expression", 
-             title = "Gene Expression of FGFR3 and HER2 in BLadder Cancer")
+        labs(x = "Gene", y = "Gene Expression", "Gene",
+             title = "Gene Expression of FGFR3 and ERBB2 in BLadder Cancer")
     } else if (input$plotmRNASeq == "Box Plot" & input$cancerE == "LUAD") {
       g <- ggplot(dat)
       g + geom_boxplot(aes(x = gene, y = expression_log2, fill = gene)) +
-        labs(x = "Gene", y = "Gene Expression", 
-             title = "Gene Expression of MET and HER2 in Lung Cancer")
+        labs(x = "Gene", y = "Gene Expression", "Gene",
+             title = "Gene Expression of MET and ERBB2 in Lung Cancer")
     } else if (input$varClinicalL == 
                "Radiation Therapy and Targeted Molecular Therapy" &
                input$therL == "Treatments Bar Chart") {
@@ -257,9 +290,62 @@ function(input, output, session) {
              title = "Bar Chart of Primary Therapy Outcome for Lung Cancer") +
         labs(fill = "Outcome") +
         coord_flip()
-      
+    } else if (input$varClinicalBL == "Primary Therapy Outcome, 
+               Additional Therapy Outcoome" &
+               input$outcomeBL == "Outcome by Therapy Bar Chart") {
+      g <- ggplot(dat |>
+                    mutate(across(everything(), function(x) na_if(x, "NA"))) |>
+                    select(Primary_Therapy_Outcome = primary_therapy_outcome_success,
+                           Additional_Treatment_Outcome = 
+                             additional_treatment_completion_success_outcome,) |>
+                    mutate(Additional_Treatment_Outcome =
+                             ifelse(Additional_Treatment_Outcome == 
+                                      "complete response", "complete remission/response",
+                                    ifelse(Additional_Treatment_Outcome == 
+                                             "partial response", "partial remission/response",
+                                           Additional_Treatment_Outcome))) |>
+                    pivot_longer(cols = everything(), 
+                                 names_to = "Therapy", values_to = "Outcome") |>
+                    drop_na(Therapy, Outcome) |>
+                    mutate(Therapy = factor(Therapy, 
+                                            levels = 
+                                              c("Primary_Therapy_Outcome",
+                                                "Additional_Treatment_Outcome"))),
+                  aes(x = Therapy, fill = Outcome))
+      g + geom_bar() +
+        labs(x = "Therapy Type", y = "Count", 
+             title = "Stacked Bar Chart of Outcome of Treatment Types for Bladder Cancer") +
+        scale_x_discrete(labels = c("Primary_Therapy_Outcome" = "Primary",
+                                    "Additional_Treatment_Outcome" = "Additional"))
+    } else  if (input$varClinicalBL == "Age, Stage" &
+                 input$outcomeBL == "Age vs. Stage Bar Chart") {
+      g <- ggplot(dat |> 
+                    mutate(across(everything(), function(x) na_if(x, "NA"))) |>
+                    mutate(Age_Grouping = 
+                             ifelse(age_at_initial_pathologic_diagnosis <= 39, "Young", 
+                                    ifelse(age_at_initial_pathologic_diagnosis >= 40 & 
+                                             age_at_initial_pathologic_diagnosis <= 64, "Middle Age",
+                                           ifelse(age_at_initial_pathologic_diagnosis > 64, "Old", NA)))) |>
+                    mutate(Age_Grouping = factor(Age_Grouping, levels = c("Young", "Middle Age",
+                                                                          "Old"))) |>
+                    group_by(Age_Grouping, pathologic_stage) |>
+                    drop_na(pathologic_stage), aes(x = Age_Grouping, fill = pathologic_stage))
+      g + geom_bar() +
+        labs(x = "Age Group", y = "Count",
+             title = 
+               "Stacked Bar Chart of Cancer Stage by Age Group in Bladder Cancer") + 
+        scale_fill_manual(values = c("stage i" = "pink",
+                                     "stage ii" = "skyblue",
+                                     "stage iii" = "cornflowerblue",
+                                     "stage iv" = "purple"
+        ),
+        labels = c("stage i" = "I" ,
+                   "stage ii" = "II",
+                   "stage iii" = "III",
+                   "stage iv" = "V")) +
+        labs(fill = "Stage")
     } else {
-      dat
+      NULL
     }
   })
   
@@ -299,8 +385,8 @@ function(input, output, session) {
     input$cancerE
   }, {
     updateCheckboxInput(session, "summary", value = FALSE)
-    updateSelectInput(session, "statSelection", choices = character(0))
   })
+  
   
   output$geneSelection <- renderUI({
     if (input$endpointE == "mRNASeq") {
@@ -339,6 +425,8 @@ function(input, output, session) {
       
       paste("The", input$statSelection, "of the gene expression of",
             input$genesel, "is", round(selected_stat, 2))
+  } else {
+      ""
     }
   })
   
