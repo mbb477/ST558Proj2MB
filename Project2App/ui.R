@@ -88,11 +88,14 @@ fluidPage(
               "Select a variable(s) for Plotting",
               choices = c(
                 "HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status", 
-                "Age, Positive Receptor Status"), selected = ""),
+                "Age, HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status"), 
+              selected = "HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status"),
             conditionalPanel(
-              condition = "input.varClinicalBR == 'Age, Positive Receptor Status'",
+              condition = 
+                "input.varClinicalBR == 
+              'Age, HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status'",
               checkboxInput("positiveBR", "Positive Receptor Status by Age Chart", 
-                value = FALSE)),
+                            value = FALSE)),
             conditionalPanel(
               condition = 
                 "input.varClinicalBR == 'HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status'",
@@ -101,19 +104,20 @@ fluidPage(
                 "Select a plot option",
                 choices = c("Heatmap", "Bar Chart")),
               conditionalPanel(
-                condition = "input.statusBR == 'Bar Chart'",
+                condition = "input.statusBR == 'Bar Chart' &
+                input.varClinicalBR == 'HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status'",
                 radioButtons("statusPlotsBR", "Select the type of Bar Chart",
-                             choices = c("Stacked", "Faceted"), selected = "")))
+                             choices = c("Stacked", "Faceted"), selected = "Stacked")))
             ),
           br(),
           conditionalPanel(
             condition = "input.endpointE == 'Clinical' & input.cancerE == 'LUAD'",
             radioButtons("varClinicalL", "Select a variable(s) for Plotting",
-                         choices = c("Radiation Therapy and Targeted Molecular Therapy", 
+                         choices = c("Radiation Therapy, Targeted Molecular Therapy", 
                                      "Primary Therapy Outcome"), selected = ""),
             conditionalPanel(
               condition = "input.varClinicalL == 
-              'Radiation Therapy and Targeted Molecular Therapy'",
+              'Radiation Therapy, Targeted Molecular Therapy'",
               checkboxInput("therL", "Treatments Bar Chart", value = FALSE)),
             
             conditionalPanel(
@@ -167,4 +171,3 @@ fluidPage(
     )
   )
 )
-

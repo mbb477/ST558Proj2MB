@@ -59,10 +59,6 @@ cancer_data1
 ## check for missing values
 
 ```{r}
-#na_counts <- cancer_data1 |>
-#  summarize(across(everything(), function(x) sum(is.na(x))))
-#na_counts
-# Assuming cancer_data1 is your tibble
 #unique_values <- unique(cancer_data1$Her2_Receptor_Status)
 #unique_values <- unique(cancer_data1$Stage)
 #unique_values
@@ -103,7 +99,7 @@ cancer_data1 <- cancer_data1 |>
                                         "Asian", "Black or African American",
                                         "White"))
          ) 
-cancer_data1
+#cancer_data1
 #colSums(is.na(cancer_data1))
 ```
 
@@ -189,7 +185,7 @@ cancer_data1_long1 <- cancer_data1 |>
   select(Radiation_Therapy, Targeted_Molecular_Therapy) |>
   pivot_longer(cols = everything(), 
                names_to = "Therapy", values_to = "Received")
-cancer_data1_long1
+#cancer_data1_long1
 
 g <- ggplot(cancer_data1_long1, aes(x = Therapy, fill = Received))
 g + geom_bar() +
@@ -208,7 +204,7 @@ cancer_data1_long2 <- cancer_data1 |>
   pivot_longer(cols = everything(), 
                names_to = "Receptor", values_to = "Status") |>
   drop_na(Status)
-cancer_data1_long2
+#cancer_data1_long2
 
 g <- ggplot(cancer_data1_long2, aes(x = Receptor, fill = Status))
 g + geom_bar() +
@@ -257,7 +253,7 @@ cancer_data1_long3 <- cancer_data1 |>
   summarize(count = n(), total_count = first(total_count), .groups = "drop") |>
   mutate(Proportion = count /total_count)
 
-cancer_data1_long3
+#cancer_data1_long3
 
 g <- ggplot(cancer_data1_long3, aes(x = Age_Grouping, y = Proportion, fill = Receptor_Type))
 g + geom_bar(stat = "identity") +
@@ -379,6 +375,7 @@ cancer_data3 <- as_tibble(parsed3$Clinical) |>
     Pathologic_T = pathologic_t,
     Stage = pathologic_stage,
     Race = race) |>
+  mutate(Diagnosis_Age == as.numeric(Diagnosis_Age)) |>
   mutate(Additional_Treatment_Outcome =
            ifelse(Additional_Treatment_Outcome == 
                     "complete response", "complete remission/response",
@@ -391,12 +388,14 @@ cancer_data3 <- as_tibble(parsed3$Clinical) |>
                          ifelse(Diagnosis_Age > 64, "Old", NA))))
            
 cancer_data3
-unique_values <- unique(cancer_data3$Additional_Treatment_Outcome)
-unique_values
+#unique_values <- unique(cancer_data3$Additional_Treatment_Outcome)
+#unique_values
 
 ```
 
+
 ## check for missing values
+
 
 ```{r}
 colSums(is.na(cancer_data3))
@@ -436,7 +435,7 @@ cancer_data3 <- cancer_data3 |>
                                                         "Old"))
          )
  
-cancer_data3
+#cancer_data3
 #unique_values <- unique(cancer_data3$Additional_Treatment_Outcome)
 #unique_values
 
@@ -487,7 +486,7 @@ cancer_data3_long1 <- cancer_data3 |>
   mutate(Therapy = factor(Therapy, 
                 levels = c("Primary_Therapy_Outcome", 
                            "Additional_Treatment_Outcome")))
-cancer_data3_long1
+#cancer_data3_long1
 
 g <- ggplot(cancer_data3_long1, aes(x = Therapy, fill = Outcome))
 g + geom_bar() +
@@ -605,7 +604,7 @@ cancer_data5 <- as_tibble(parsed5$Clinical) |>
     Race = race,
     Radiation_Therapy = radiation_therapy,
     Targeted_Molecular_Therapy = targeted_molecular_therapy)
-cancer_data5
+#cancer_data5
 #unique_values <-unique(cancer_data5$Primary_Therapy_Outcome)
 #unique_values
 
@@ -691,7 +690,7 @@ cancer_data5_long5 <- cancer_data5 |>
   drop_na(Radiation_Therapy, Targeted_Molecular_Therapy) |>
   pivot_longer(cols = everything(), 
                names_to = "Therapy", values_to = "Received")
-cancer_data5_long5
+#cancer_data5_long5
 
 g <- ggplot(cancer_data5_long5, aes(x = Therapy, fill = Received))
 g + geom_bar() +
@@ -700,8 +699,6 @@ g + geom_bar() +
   scale_x_discrete(labels = c("Radiation_Therapy" = "Radiation Therapy", 
   "Targeted_Molecular_Therapy" = "Targeted Molecular Therapy"))
 ```
-
-
 
 
 # Therapy Outcome
@@ -850,33 +847,6 @@ dat
 ```
 
 
-#test graph
-
-```{r}
-g <- ggplot(dat |> 
-              mutate(across(everything(), function(x) na_if(x, "NA"))) |>
-              drop_na(primary_therapy_outcome_success) |>
-              mutate(factor(primary_therapy_outcome_success, 
-                            levels = c("complete remission/response",
-                                       "partial remission/response",
-                                       "stable disease", "progressive disease"), 
-                            labels = c("Complete disease Remission/Response",
-                                       "Partial Remission/Response",
-                                       "Stable Disease", "Progressive Disease"))),
-            aes(x = primary_therapy_outcome_success, 
-                fill = primary_therapy_outcome_success))
-g + geom_bar() +
-  labs(x = "Outcome", y = "Count", 
-       title = "Bar Chart of Primary Therapy Outcome for Lung Cancer") +
-  labs(fill = "Outcome") +
-  coord_flip()
-```
-
-
-
-
-
-
 
 # cBioPortal
 
@@ -951,7 +921,6 @@ api_query <- function(endpoint, cancer) {
   return(cancer_data)
 }
 
-
 ```
 
 "https://www.cbioportal.org/api/studies/brca_tcga_pan_can_atlas_2018/clinical-data?clinicalDataType=SAMPLE&projection=SUMMARY&pageSize=10000000&pageNumber=0&direction=ASC"
@@ -965,7 +934,7 @@ cancer_data <- api_query(cbioClinical, BRCA)
 ## test again
 
 ```{r}
-api_query(mRNASeq, BRCA)
+#api_query(mRNASeq, BRCA)
 ```
 
 # Bubble Plot 1
