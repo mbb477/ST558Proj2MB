@@ -52,9 +52,10 @@ cancer_data1 <- as_tibble(parsed1$Clinical) |>
            ifelse(Diagnosis_Age <= 39, "Young", 
                   ifelse(Diagnosis_Age >= 40 & Diagnosis_Age <= 64, "Middle Age",
                          ifelse(Diagnosis_Age > 64, "Old", NA))))
-cancer_data1
+#cancer_data1
 
 ```
+
 
 ## check for missing values
 
@@ -99,7 +100,7 @@ cancer_data1 <- cancer_data1 |>
                                         "Asian", "Black or African American",
                                         "White"))
          ) 
-#cancer_data1
+cancer_data1
 #colSums(is.na(cancer_data1))
 ```
 
@@ -130,20 +131,6 @@ cancer_data1 |>
   drop_na(Stage) |>
   group_by(Stage) |>
   summarize(count = n())
-```
-
-# test
-
-```{r}
-library(plotly)
-# Plotly pie chart
-plot_ly(cancer_data1 |> drop_na(Stage_Condensed) |> group_by(Stage_Condensed) |> 
-          summarize(count = n()), labels = ~Stage_Condensed, 
-        values = ~count, type = "pie") %>%
-  layout(title = "Interactive Pie Chart of Cancer Stage Distriubtion in Breast Cancer",
-         legend = list(orientation = "h"))
-         
-
 ```
 
 ## Receptor status
@@ -207,7 +194,7 @@ cancer_data1_long2 <- cancer_data1 |>
 #cancer_data1_long2
 
 g <- ggplot(cancer_data1_long2, aes(x = Receptor, fill = Status))
-g + geom_bar() +
+g + geom_bar(position = "fill") +
   labs(x = "Receptor", y = "Count", title = "Stacked Bar Chart of Receptor Status") +
   scale_x_discrete(labels = c("Estrogen_Receptor_Status" = "Estrogen Receptor", 
   "Progesterone_Receptor_Status" = "Progesterone Receptor", 
@@ -218,7 +205,6 @@ g + geom_bar() +
                                "Equivocal" = "cornflowerblue"
                                ))
 ```
-
 
 # above plot faceted
 
@@ -313,15 +299,6 @@ g + geom_density(alpha = 0.5, aes(fill = Gene)) +
        title = "Expression of BRCA2 and HER2 in Breast Cancer")
 ```
 
-#histogram of breast cancer gene expression
-
-```{r}
-g <- ggplot(cancer_data2, aes(x = Gene_Expression))
-g + geom_histogram(alpha = 0.5, binwidth = 1, aes(fill = Gene)) +
-  labs(x = "Gene Expression", y = "Density", 
-       title = "Expression of BRCA2 and HER2 in Breast Cancer")
-```
-
 # box plot of breast cancer gene expression
 
 ```{r}
@@ -387,7 +364,7 @@ cancer_data3 <- as_tibble(parsed3$Clinical) |>
                   ifelse(Diagnosis_Age >= 40 & Diagnosis_Age <= 64, "Middle Age",
                          ifelse(Diagnosis_Age > 64, "Old", NA))))
            
-cancer_data3
+#cancer_data3
 #unique_values <- unique(cancer_data3$Additional_Treatment_Outcome)
 #unique_values
 
@@ -435,7 +412,7 @@ cancer_data3 <- cancer_data3 |>
                                                         "Old"))
          )
  
-#cancer_data3
+cancer_data3
 #unique_values <- unique(cancer_data3$Additional_Treatment_Outcome)
 #unique_values
 
@@ -557,15 +534,6 @@ g + geom_density(alpha = 0.5, aes(fill = Gene)) +
 ```{r}
 g <- ggplot(cancer_data4)
 g + geom_boxplot(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
-  labs(x = "Gene", y = "Gene Expression", 
-       title = "Expression of FGFR3 and HER2 in Bladder Cancer")
-```
-
-# BLCA violin plot
-
-```{r}
-g <- ggplot(cancer_data4)
-g + geom_violin(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
   labs(x = "Gene", y = "Gene Expression", 
        title = "Expression of FGFR3 and HER2 in Bladder Cancer")
 ```
@@ -756,15 +724,6 @@ g + geom_boxplot(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
        title = "Expression of MET and HER2 in Lung Cancer")
 ```
 
-# violin plot
-
-```{r}
-g <- ggplot(cancer_data6)
-g + geom_violin(aes(x = Gene, y = Gene_Expression, fill = Gene)) +
-  labs(x = "Gene", y = "Gene Expression", 
-       title = "Expression of MET and HER2 in Lung Cancer")
-```
-
 # Function for API Query
 
 URLS:
@@ -937,28 +896,6 @@ cancer_data <- api_query(cbioClinical, BRCA)
 #api_query(mRNASeq, BRCA)
 ```
 
-# Bubble Plot 1
-
-
-```{r}
-
-b <- ggplot(cancer_data |>
-              mutate(MSI_SCORE_MANTIS = as.numeric(MSI_SCORE_MANTIS), 
-                     FRACTION_GENOME_ALTERED = 
-                       as.numeric(FRACTION_GENOME_ALTERED),
-                     MUTATION_COUNT = as.numeric(MUTATION_COUNT)) |>
-              drop_na(MUTATION_COUNT, MSI_SCORE_MANTIS, 
-                      FRACTION_GENOME_ALTERED), 
-            aes(x = log2(MUTATION_COUNT + 1), y = MSI_SCORE_MANTIS))
-b + geom_point(aes(color = CANCER_TYPE_DETAILED, 
-                   size = FRACTION_GENOME_ALTERED), alpha = 0.4) +
-  scale_fill_manual(values = c("darkturquoise", "pink", "cornflowerblue",
-                                  "darkorchid", "darkseagreen", "deeppink4")) +
-  labs(x = "Mutation Count", y = "Microsatellite Instability Score")
-  
-
-
-```
 
 # Bubble Plot 2
 

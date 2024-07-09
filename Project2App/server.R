@@ -209,8 +209,7 @@ function(input, output, session) {
     updateCheckboxInput(session, "outcomeBL", value = FALSE)
     updateCheckboxInput(session, "stageBL", value = FALSE)
     
-    })
-
+  })
   
   observeEvent ({
     input$cancerE
@@ -220,7 +219,6 @@ function(input, output, session) {
     
   })
   
-  
   observeEvent ({
     input$cancerE
     input$varClinicalBR
@@ -229,13 +227,6 @@ function(input, output, session) {
     
   })
   
-  observeEvent ({
-    input$cancerE
-    input$varClinicalBR
-  }, {
-    updateRadioButtons(session, "statusPlotsBR", selected = "")
-    
-  })
   
   # PLOTS for data exploration
   
@@ -289,9 +280,14 @@ function(input, output, session) {
       } else {
         return(NULL)
       }
+      
       #plots for Clinical endpoint
+      
+      #Plots for Clinical and LUAD
     } else if (input$endpointE == "Clinical") {
-      if (input$varClinicalL == "Radiation Therapy, Targeted Molecular Therapy" && input$therL == TRUE) {
+      if (input$varClinicalL == "Radiation Therapy, Targeted Molecular Therapy" && input$therL == TRUE &&
+          input$cancerE == "LUAD") {
+        req(input$varClinicalL, input$therL, input$cancerE)
         ggplot(dat |> 
                  mutate(across(everything(), ~na_if(.x, "NA"))) |> 
                  select(radiation_therapy, targeted_molecular_therapy) |> 
@@ -304,9 +300,12 @@ function(input, output, session) {
                title = "Administered Treatments for Lung Adenocarcinoma") +
           scale_x_discrete(labels = c("Radiation_Therapy" = "Radiation Therapy", 
                                       "Targeted_Molecular_Therapy" = "Targeted Molecular Therapy")) +
+          scale_fill_discrete(labels = c("no" = "No", "yes" = "Yes")) +
           theme(text=element_text(size=16))
         
-      } else if (input$varClinicalL == "Primary Therapy Outcome" && input$outcomeL == TRUE) {
+      } else if (input$varClinicalL == "Primary Therapy Outcome" && input$outcomeL == TRUE &&
+                 input$cancerE == "LUAD") {
+        req(input$varClinicalL, input$outcomeL, input$cancerE)
         ggplot(dat |> 
                  mutate(across(everything(), ~na_if(.x, "NA"))) |> 
                  drop_na(primary_therapy_outcome_success) |> 
@@ -328,40 +327,54 @@ function(input, output, session) {
                 axis.text.y = element_text(angle = -45, hjust = 1, vjust = 1)) +
           coord_flip()
         
-      } else if (input$varClinicalBL == "Primary Therapy Outcome, Additional Therapy Outcome" && input$outcomeBL == TRUE) {
-        ggplot(dat |> 
-                 mutate(across(everything(), ~na_if(.x, "NA"))) |> 
-                 select(Primary_Therapy_Outcome = primary_therapy_outcome_success,
-                        Additional_Treatment_Outcome = additional_treatment_completion_success_outcome) |> 
-                 mutate(Additional_Treatment_Outcome = 
-                          ifelse(Additional_Treatment_Outcome == "complete response",
-                                 "complete remission/response",
-                                 ifelse(Additional_Treatment_Outcome == 
-                                          "partial response", "partial remission/response",
-                                        Additional_Treatment_Outcome))) |> 
-                 pivot_longer(cols = everything(), 
-                              names_to = "Therapy", values_to = "Outcome") |> 
-                 drop_na(Therapy, Outcome) |> 
-                 mutate(Therapy = factor(Therapy, 
-                                         levels = c("Primary_Therapy_Outcome", 
-                                                    "Additional_Treatment_Outcome"))),
-               aes(x = Therapy, fill = Outcome)) +
-          geom_bar() +
+        #Plots for Clinical and BLCA
+      } else if (input$varClinicalBL == "Primary Therapy Outcome, Additional Therapy Outcome" && 
+                 input$outcomeBL == TRUE && input$cancerE == "BLCA") {
+        req(input$varClinicalBL, input$outcomeBL, input$cancerE)
+        g<- ggplot(dat |> 
+                     mutate(across(everything(), ~na_if(.x, "NA"))) |> 
+                     select(primary_therapy_outcome_success,
+                            additional_treatment_completion_success_outcome) |> 
+                     mutate(additional_treatment_completion_success_outcome = 
+                              ifelse(additional_treatment_completion_success_outcome == 
+                                       "complete response", "complete remission/response",
+                                     ifelse(additional_treatment_completion_success_outcome == 
+                                              "partial response", "partial remission/response",
+                                            additional_treatment_completion_success_outcome))) |> 
+                     pivot_longer(cols = everything(), 
+                                  names_to = "Therapy", values_to = "Outcome") |>
+                     drop_na(Therapy, Outcome) |> 
+                     mutate(Therapy = factor(Therapy, 
+                                             levels = c("primary_therapy_outcome_success", 
+                                                        "additional_treatment_completion_success_outcome"))) |>
+                     mutate(Outcome = 
+                              factor(Outcome,
+                                     levels = c("complete remission/response", 
+                                                "partial remission/response", 
+                                                "stable disease", 
+                                                "progressive disease"))),
+                   aes(x = Therapy, fill = Outcome))
+        g + geom_bar(position = "fill") +
           labs(x = "Therapy Type", y = "Count", 
                title = "Outcome of Treatment Types for Bladder Cancer") +
           scale_x_discrete(labels = 
-                             c("Primary_Therapy_Outcome" = "Primary", 
-                               "Additional_Treatment_Outcome" = "Additional")) +
+                             c("primary_therapy_outcome_success" = "Primary", 
+                               "additional_treatment_completion_success_outcome" = "Additional")) +
           scale_fill_discrete(labels = 
                                 c("complete remission/response" = "Complete Response", 
                                   "partial remission/response" = "Partial Response",
-                                  "progressive disease" = " Progressive Disease",
-                                  "stable disease" = "Stable Disease")) +
+                                  "stable disease" = "Stable Disease",
+                                  "progressive disease" = "Progressive Disease")) +
           theme(text=element_text(size=15))
         
-      } else if (input$varClinicalBL == "Age, Stage" && input$stageBL == TRUE) {
+      } else if (input$varClinicalBL == "Age, Stage" && input$stageBL == TRUE &&
+                 input$cancerE == "BLCA") {
+        req(input$varClinicalBL, input$stageBL, input$cancerE)
         ggplot(dat |> 
                  mutate(across(everything(), ~na_if(.x, "NA"))) |> 
+                 mutate(pathologic_stage =
+                          factor(pathologic_stage, levels = 
+                                   c("stage i", "stage ii", "stage iii", "stage iv"))) |>
                  mutate(Age_Grouping = ifelse(age_at_initial_pathologic_diagnosis <= 
                                                 39, "Young", 
                                               ifelse(age_at_initial_pathologic_diagnosis >= 
@@ -381,21 +394,27 @@ function(input, output, session) {
                               c("stage i" = "pink", "stage ii" = "skyblue", 
                                 "stage iii" = "cornflowerblue", "stage iv" = "purple"),
                             labels = 
-                              c("stage i" = "I", "stage ii" = "II", 
-                                "stage iii" = "III", "stage iv" = "IV")) +
-          labs(fill = "Stage") + theme(text=element_text(size=18))
+                              c("stage iv" = "IV", "stage iii" = "III",
+                                "stage ii" = "II", "stage i" = "I")) +
+          labs(fill = "Stage") + 
+          theme(text=element_text(size=18))
+        
+        #Plots for Clinical and BRCA
+        
       } else if (input$varClinicalBR == 
                  "Age, HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status" &&
-                 input$positiveBR == TRUE) {
+                 input$positiveBR == TRUE && input$cancerE == "BRCA") {
+        req(input$varClinicalBR, input$positiveBR, input$cancerE)
         g <- ggplot(dat |>
-                      select(Estrogen_Receptor_Status = breast_carcinoma_estrogen_receptor_status, 
-                             Progesterone_Receptor_Status = breast_carcinoma_progesterone_receptor_status, 
-                             HER2_Receptor_Status = lab_proc_her2_neu_immunohistochemistry_receptor_status, 
+                      select(breast_carcinoma_estrogen_receptor_status, 
+                             breast_carcinoma_progesterone_receptor_status, 
+                             lab_proc_her2_neu_immunohistochemistry_receptor_status, 
                              Diagnosis_Age = age_at_initial_pathologic_diagnosis)|>
                       mutate(across(everything(), ~na_if(.x, "NA"))) |>
-                      drop_na(Estrogen_Receptor_Status, 
-                              Progesterone_Receptor_Status, 
-                              HER2_Receptor_Status, Diagnosis_Age) |>
+                      drop_na(breast_carcinoma_estrogen_receptor_status, 
+                              breast_carcinoma_progesterone_receptor_status, 
+                              lab_proc_her2_neu_immunohistochemistry_receptor_status, 
+                              Diagnosis_Age) |>
                       mutate(Age_Grouping = 
                                ifelse(Diagnosis_Age <= 39, "Young", 
                                       ifelse(Diagnosis_Age >= 40 & Diagnosis_Age <= 64, "Middle Age",
@@ -403,9 +422,9 @@ function(input, output, session) {
                       mutate(Age_Grouping = factor(Age_Grouping, levels = c("Young", "Middle Age",
                                                                             "Old", NA)))|>
                       pivot_longer(cols = 
-                                     c(Estrogen_Receptor_Status, 
-                                       Progesterone_Receptor_Status, 
-                                       HER2_Receptor_Status),
+                                     c(breast_carcinoma_estrogen_receptor_status, 
+                                       breast_carcinoma_progesterone_receptor_status, 
+                                       lab_proc_her2_neu_immunohistochemistry_receptor_status),
                                    names_to = "Receptor_Type", values_to = "Receptor_Status") |>
                       filter(Receptor_Status == "positive") |>
                       group_by(Age_Grouping) |>
@@ -417,23 +436,25 @@ function(input, output, session) {
         g + geom_bar(stat = "identity") +
           labs(x = "Age Group", y = "Proportion",
                title = "Positive Receptor Status by Age") + 
-          scale_fill_manual(values = c("Estrogen_Receptor_Status" = "pink",
-                                       "Progesterone_Receptor_Status" = "skyblue",
-                                       "HER2_Receptor_Status" = "cornflowerblue"
+          scale_fill_manual(values = c("breast_carcinoma_estrogen_receptor_status" = "pink",
+                                       "breast_carcinoma_progesterone_receptor_status" = "skyblue",
+                                       "lab_proc_her2_neu_immunohistochemistry_receptor_status" = "cornflowerblue"
           ),
-          labels = c("Estrogen_Receptor_Status" = "Estrogen Positive" ,
-                     "Progesterone_Receptor_Status" = "Progesterone Positive",
-                     "HER2_Receptor_Status" = "Her2 Positive")) +
+          labels = c("breast_carcinoma_estrogen_receptor_status" = "Estrogen Positive" ,
+                     "breast_carcinoma_progesterone_receptor_status" = "Progesterone Positive",
+                     "lab_proc_her2_neu_immunohistochemistry_receptor_status" = "Her2 Positive")) +
           labs(fill = "Receptor") +
           theme(text=element_text(size=18))
+        
       } else if (input$varClinicalBR == 
                  "HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status" &&
-               input$statusBR == "Heatmap") {
+                 input$cancerE == "BRCA" & input$statusBR == "Heatmap") {
+        req(input$varClinicalBR, input$statusBR, input$cancerE)
         dat2 <- dat |>
-          select(Estrogen_Receptor_Status = breast_carcinoma_estrogen_receptor_status, 
-                 Progesterone_Receptor_Status = breast_carcinoma_progesterone_receptor_status, 
-                 HER2_Receptor_Status = lab_proc_her2_neu_immunohistochemistry_receptor_status) |>
           mutate(across(everything(), ~na_if(.x, "NA"))) |>
+          select(breast_carcinoma_estrogen_receptor_status, 
+                 breast_carcinoma_progesterone_receptor_status, 
+                 lab_proc_her2_neu_immunohistochemistry_receptor_status) |>
           pivot_longer(cols = everything(), 
                        names_to = "Receptor", values_to = "Status") |>
           drop_na(Receptor, Status)
@@ -446,55 +467,74 @@ function(input, output, session) {
                  "Heatmap of Receptor Status in Breast Cancer",
                fill = "Frequency") +
           scale_x_discrete(labels = 
-                             c("Estrogen_Receptor_Status" = "Estrogen Receptor",
-                               "HER2_Receptor_Status" = "HER2 Receptor",
-                               "Progesterone_Receptor_Status" = "Progesterone Receptor")) +
-          theme(text=element_text(size=16))
-      } else if (input$varClinicalBR == 
-                 "HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status" &&
-                 input$statusBR == "Bar Chart" && input$statusPlotsBR == "Stacked") {
-        g <- ggplot(dat |>
-                      select(Estrogen_Receptor_Status = breast_carcinoma_estrogen_receptor_status, 
-                             Progesterone_Receptor_Status = breast_carcinoma_progesterone_receptor_status, 
-                             HER2_Receptor_Status = lab_proc_her2_neu_immunohistochemistry_receptor_status) |>
-                      mutate(across(everything(), ~na_if(.x, "NA"))) |>
-                      pivot_longer(cols = everything(),
-                                   names_to = "Receptor", values_to = "Status") |>
-                      drop_na(Status), 
-                    aes(x = Receptor, fill = Status))
-        g + geom_bar() +
-          labs(x = "Receptor", y = "Count", title = "Stacked Bar Chart of Receptor Status") +
-          scale_x_discrete(labels = c("Estrogen_Receptor_Status" = "Estrogen Receptor", 
-                                      "Progesterone_Receptor_Status" = "Progesterone Receptor", 
-                                      "HER2_Receptor_Status" = "HER2 Receptor")) +
-          scale_fill_manual(values = c("positive" = "pink",
-                                       "negative" = "skyblue",
-                                       "indeterminate" = "purple",
-                                       "equivocal" = "cornflowerblue")) +
-          theme(text=element_text(size=16))
-      } else if (input$varClinicalBR == 
-                 "HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status" &&
-                 input$statusBR == "Bar Chart" && input$statusPlotsBR == "Faceted") {
-        g <- ggplot(dat |>
-                      select(Estrogen_Receptor_Status = breast_carcinoma_estrogen_receptor_status, 
-                             Progesterone_Receptor_Status = breast_carcinoma_progesterone_receptor_status, 
-                             HER2_Receptor_Status = lab_proc_her2_neu_immunohistochemistry_receptor_status) |>
-                      mutate(across(everything(), ~na_if(.x, "NA"))) |>
-                      pivot_longer(cols = everything(),
-                                   names_to = "Receptor", values_to = "Status") |>
-                      drop_na(Status), 
-                    aes(x = Receptor, fill = Status))
-        g + geom_bar(position = "dodge") +
-          labs(x = "Receptor", y = "Count", title = "Side by Side Bar Chart of Receptor Status") +
-          scale_x_discrete(labels = c("Estrogen_Receptor_Status" = "Estrogen Receptor", 
-                                      "Progesterone_Receptor_Status" = "Progesterone Receptor", 
-                                      "HER2_Receptor_Status" = "HER2 Receptor")) +
-          scale_fill_manual(values = c("positive" = "pink",
-                                       "negative" = "skyblue",
-                                       "indeterminate" = "purple",
-                                       "equivocal" = "cornflowerblue")) +
+                             c("breast_carcinoma_estrogen_receptor_status" = "Estrogen Receptor",
+                               "lab_proc_her2_neu_immunohistochemistry_receptor_status" = "HER2 Receptor",
+                               "breast_carcinoma_progesterone_receptor_status" = "Progesterone Receptor")) +
           theme(text=element_text(size=16))
         
+      } else if (input$varClinicalBR == 
+                 "HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status" &&
+                 input$statusBR == "Bar Chart" && input$statusPlotsBR == "Stacked" && 
+                 input$cancerE == "BRCA") {
+        req(input$varClinicalBR, input$statusBR, input$statusPlotsBR, input$cancerE)
+        g <- ggplot(dat |>
+                      select(breast_carcinoma_estrogen_receptor_status, 
+                             breast_carcinoma_progesterone_receptor_status, 
+                             lab_proc_her2_neu_immunohistochemistry_receptor_status) |>
+                      mutate(across(everything(), ~na_if(.x, "NA"))) |>
+                      pivot_longer(cols = everything(),
+                                   names_to = "Receptor", values_to = "Status") |>
+                      drop_na(Status) |>
+                      mutate(Status = factor(Status, levels = 
+                                               c("positive", "negative", "equivocal", "indeterminate"),
+                                             labels = 
+                                               c("Positive", "Negative", "Equivocal", "Indeterminate"))),
+                    aes(x = Receptor, fill = Status))
+        g + geom_bar(position = "fill") +
+          labs(x = "Receptor", y = "Count", title = "Stacked Bar Chart of Receptor Status") +
+          scale_x_discrete(labels = c("breast_carcinoma_estrogen_receptor_status" = 
+                                        "Estrogen Receptor", 
+                                      "lab_proc_her2_neu_immunohistochemistry_receptor_status" = 
+                                        "HER2 Receptor",
+                                      "breast_carcinoma_progesterone_receptor_status" = 
+                                        "Progesterone Receptor")) +
+          scale_fill_manual(values = c("Positive" = "pink",
+                                       "Negative" = "skyblue",
+                                       "Indeterminate" = "purple",
+                                       "Equivocal" = "cornflowerblue")) +
+          theme(text=element_text(size=16))
+        
+      } else if (input$varClinicalBR == 
+                 "HER2 Receptor Status, Estrogen Receptor Status, Progesterone Receptor Status" &&
+                 input$statusBR == "Bar Chart" && input$statusPlotsBR == "Faceted" && 
+                 input$cancerE == "BRCA") {
+        req(input$varClinicalBR, input$statusBR, input$statusPlotsBR, input$cancerE)
+        g <- ggplot(dat |>
+                      select(breast_carcinoma_estrogen_receptor_status, 
+                             breast_carcinoma_progesterone_receptor_status, 
+                             lab_proc_her2_neu_immunohistochemistry_receptor_status) |>
+                      mutate(across(everything(), ~na_if(.x, "NA"))) |>
+                      pivot_longer(cols = everything(),
+                                   names_to = "Receptor", values_to = "Status") |>
+                      drop_na(Status) |>
+                      mutate(Status = factor(Status, levels = 
+                                               c("indeterminate", "equivocal", "negative", "positive"),
+                                             labels = 
+                                               c("Indeterminate", "Equivocal", "Negative", "Positive"))),
+                    aes(x = Receptor, fill = Status))
+        g + geom_bar(position = "dodge") +
+          labs(x = "Receptor", y = "Count", title = "Stacked Bar Chart of Receptor Status") +
+          scale_x_discrete(labels = c("breast_carcinoma_estrogen_receptor_status" = 
+                                        "Estrogen Receptor", 
+                                      "lab_proc_her2_neu_immunohistochemistry_receptor_status" = 
+                                        "HER2 Receptor",
+                                      "breast_carcinoma_progesterone_receptor_status" = 
+                                        "Progesterone Receptor")) +
+          scale_fill_manual(values = c("Positive" = "pink",
+                                       "Negative" = "skyblue",
+                                       "Indeterminate" = "purple",
+                                       "Equivocal" = "cornflowerblue")) +
+          theme(text=element_text(size=16))
         
       } else {
         return(NULL)
@@ -508,7 +548,7 @@ function(input, output, session) {
   
   
   
-  #Contingencty TABLES for data exploration
+  #Contingency TABLES for data exploration
   output$tableExplore <- renderDT ({
     dat <- cancer_dataE()
     
@@ -612,3 +652,4 @@ function(input, output, session) {
     }
   )
 }
+

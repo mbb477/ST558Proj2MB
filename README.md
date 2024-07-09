@@ -1,7 +1,9 @@
 # ST558Proj2MB
 
 This app allows the user to query clinical and gene expression (mRNA) data for 
-3 types of cancer using the FireBrowseAPI. 
+3 types of cancer using the FireBrowse API. The user can select 6 combinations
+of endpoints and cancers and subsequently view the data, subsest the data and view
+graphical and numerical summaries.
 
 Packages needed:
 shiny
